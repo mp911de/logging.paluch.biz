@@ -1,17 +1,17 @@
 -classpath
-'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436034/LOG-LOG-JOB1/target/classes:/home/build/.m2/repository/ch/qos/logback/logback-core/1.0.13/logback-core-1.0.13.jar:/home/build/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar:/home/build/.m2/repository/org/jboss/logmanager/jboss-logmanager/1.5.2.Final/jboss-logmanager-1.5.2.Final.jar:/home/build/.m2/repository/org/apache/commons/commons-pool2/2.2/commons-pool2-2.2.jar:/home/build/.m2/repository/redis/clients/jedis/2.5.1/jedis-2.5.1.jar:/home/build/.m2/repository/ch/qos/logback/logback-classic/1.0.13/logback-classic-1.0.13.jar:/home/build/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-core/2.0/log4j-core-2.0.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-api/2.0/log4j-api-2.0.jar:/home/build/.m2/repository/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar'
+'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/131073/LOG-LOG-JOB1/target/classes:/home/build/.m2/repository/ch/qos/logback/logback-core/1.0.13/logback-core-1.0.13.jar:/home/build/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar:/home/build/.m2/repository/org/jboss/logmanager/jboss-logmanager/1.5.2.Final/jboss-logmanager-1.5.2.Final.jar:/home/build/.m2/repository/org/apache/commons/commons-pool2/2.2/commons-pool2-2.2.jar:/home/build/.m2/repository/redis/clients/jedis/2.5.1/jedis-2.5.1.jar:/home/build/.m2/repository/ch/qos/logback/logback-classic/1.0.13/logback-classic-1.0.13.jar:/home/build/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-core/2.0/log4j-core-2.0.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-api/2.0/log4j-api-2.0.jar:/home/build/.m2/repository/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar'
 -encoding
 'UTF-8'
 -protected
 -sourcepath
-'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436034/LOG-LOG-JOB1/src/main/java'
+'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/131073/LOG-LOG-JOB1/src/main/java'
 -author
 -bottom
 'Copyright &#169; 2013-2014. All Rights Reserved.'
 -charset
 'UTF-8'
 -d
-'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436034/LOG-LOG-JOB1/target/site/apidocs'
+'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/131073/LOG-LOG-JOB1/target/site/apidocs'
 -docencoding
 'UTF-8'
 -doctitle
