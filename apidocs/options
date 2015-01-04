@@ -1,5 +1,5 @@
 -classpath
-'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436033/LOG-LOG-JOB1/target/classes:/home/build/.m2/repository/ch/qos/logback/logback-core/1.0.13/logback-core-1.0.13.jar:/home/build/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar:/home/build/.m2/repository/org/jboss/logmanager/jboss-logmanager/1.5.2.Final/jboss-logmanager-1.5.2.Final.jar:/home/build/.m2/repository/org/apache/commons/commons-pool2/2.2/commons-pool2-2.2.jar:/home/build/.m2/repository/redis/clients/jedis/2.5.1/jedis-2.5.1.jar:/home/build/.m2/repository/ch/qos/logback/logback-classic/1.0.13/logback-classic-1.0.13.jar:/home/build/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-core/2.0/log4j-core-2.0.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-api/2.0/log4j-api-2.0.jar:/home/build/.m2/repository/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar'
+'/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436033/LOG-LOG-JOB1/target/classes:/home/build/.m2/repository/ch/qos/logback/logback-core/1.0.13/logback-core-1.0.13.jar:/home/build/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar:/home/build/.m2/repository/org/jboss/logmanager/jboss-logmanager/1.5.2.Final/jboss-logmanager-1.5.2.Final.jar:/home/build/.m2/repository/org/apache/commons/commons-pool2/2.2/commons-pool2-2.2.jar:/home/build/.m2/repository/redis/clients/jedis/2.6.1/jedis-2.6.1.jar:/home/build/.m2/repository/ch/qos/logback/logback-classic/1.0.13/logback-classic-1.0.13.jar:/home/build/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-core/2.1/log4j-core-2.1.jar:/home/build/.m2/repository/org/apache/logging/log4j/log4j-api/2.1/log4j-api-2.1.jar:/home/build/.m2/repository/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar'
 -encoding
 'UTF-8'
 -protected
@@ -7,7 +7,7 @@
 '/srv/www/vhosts/ci.paluch.corp/data/xml-data/build-dir/11436033/LOG-LOG-JOB1/src/main/java'
 -author
 -bottom
-'Copyright &#169; 2013-2014. All Rights Reserved.'
+'Copyright &#169; 2013-2015. All Rights Reserved.'
 -charset
 'UTF-8'
 -d
@@ -15,10 +15,10 @@
 -docencoding
 'UTF-8'
 -doctitle
-'logstash logging connectors 1.5.5-SNAPSHOT API'
+'logstash logging connectors 1.6.0-SNAPSHOT API'
 -link
 'http://java.sun.com/javase/6/docs/api'
 -use
 -version
 -windowtitle
-'logstash logging connectors 1.5.5-SNAPSHOT API'
+'logstash logging connectors 1.6.0-SNAPSHOT API'
