@@ -71,10 +71,12 @@
                 <ul class="nav nav-list">
                     <li class="nav-header">Overview</li>
                               
-      <li class="active">
+      <li>
   
-            <a href="#"><i class="none"></i>Introduction</a>
-          </li>
+                          <a href="index.html" title="Introduction">
+          <i class="none"></i>
+        Introduction</a>
+            </li>
                 
       <li>
   
@@ -141,12 +143,10 @@
         Default Fields</a>
             </li>
                 
-      <li>
+      <li class="active">
   
-                          <a href="syslog-level-mapping.html" title="Syslog level mapping">
-          <i class="none"></i>
-        Syslog level mapping</a>
-            </li>
+            <a href="#"><i class="none"></i>Syslog level mapping</a>
+          </li>
                 
       <li>
   
@@ -177,83 +177,13 @@
         JavaDoc</a>
             </li>
                               <li class="nav-header">Project Documentation</li>
-                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                  
       <li>
   
                           <a href="project-info.html" title="Project Information">
-          <i class="icon-chevron-down"></i>
+          <i class="icon-chevron-right"></i>
         Project Information</a>
-                    <ul class="nav nav-list">
-                    
-      <li class="active">
-  
-            <a href="#"><i class="none"></i>About</a>
-          </li>
-                    
-      <li>
-  
-                          <a href="plugin-management.html" title="Plugin Management">
-          <i class="none"></i>
-        Plugin Management</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="distribution-management.html" title="Distribution Management">
-          <i class="none"></i>
-        Distribution Management</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="dependency-info.html" title="Dependency Information">
-          <i class="none"></i>
-        Dependency Information</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="dependencies.html" title="Dependencies">
-          <i class="none"></i>
-        Dependencies</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="source-repository.html" title="Source Repository">
-          <i class="none"></i>
-        Source Repository</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="issue-tracking.html" title="Issue Tracking">
-          <i class="none"></i>
-        Issue Tracking</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="integration.html" title="Continuous Integration">
-          <i class="none"></i>
-        Continuous Integration</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="team-list.html" title="Project Team">
-          <i class="none"></i>
-        Project Team</a>
-            </li>
-                    
-      <li>
-  
-                          <a href="project-summary.html" title="Project Summary">
-          <i class="none"></i>
-        Project Summary</a>
-            </li>
-              </ul>
-        </li>
+                  </li>
                                                                                     
       <li>
   
@@ -291,45 +221,46 @@
                 
         <div id="bodyColumn"  class="span9" >
                                   
-            <h1>Introduction <a class="externalLink" href="https://snap-ci.com/mp911de/logstash-gelf/branch/master"><img src="https://snap-ci.com/mp911de/logstash-gelf/branch/master/build_image" alt="Build Status" /></a></h1>
-<p>logstash logging connectors (logstash-gelf)</p>
-<p>Provides logging to logstash using the Graylog Extended Logging Format (GELF). This implementation comes with support for three areas:</p>
+            <h1>Syslog level mapping</h1>
+<p>Gelf requires a syslog level which is an integer. There are several ways how to determine that. log4j for example has an built-in mapping. To keep the style consistent over various logging frameworks this is the way how it works:</p>
+<div class="section">
+<h2>log4j2<a name="log4j2"></a></h2>
+<p>Resolution of the syslog level is based on the <tt>StandardLevel</tt> property of the log level:</p>
 
 <ul>
   
-<li><a href="examples/jul.html">Java Util Logging</a></li>
+<li>FATAL: 2</li>
   
-<li><a href="examples/log4j-1.2.x.html">log4j 1.2.x</a></li>
+<li>ERROR: 3</li>
   
-<li><a href="examples/log4j-2.x.html">log4j 2.x</a></li>
+<li>WARN: 4</li>
   
-<li><a href="examples/jbossas7.html">JBoss 7/Wildfly</a></li>
+<li>INFO: 6</li>
   
-<li><a href="examples/logback.html">Logback</a></li>
-</ul>
+<li>Everything else: 7</li>
+</ul></div>
 <div class="section">
-<h2>How to get<a name="How_to_get"></a></h2>
-<p>Maven:</p>
+<h2>log4j 1.2, JUL, JBoss Logging, Logback<a name="log4j_1.2_JUL_JBoss_Logging_Logback"></a></h2>
+<p>These frameworks provide an integer representation of the log level value:</p>
 
-<div class="source">
-<pre>&lt;dependency&gt;
-    &lt;groupId&gt;biz.paluch.logging&lt;/groupId&gt;
-    &lt;artifactId&gt;logstash-gelf&lt;/artifactId&gt;
-    &lt;version&gt;1.6.0&lt;/version&gt;
-&lt;/dependency&gt;
-</pre></div>
-<p>or <a class="externalLink" href="http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/1.6.0/logstash-gelf-1.6.0.jar">http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/1.6.0/logstash-gelf-1.6.0.jar</a></p>
-<p>JBoss Module Download:</p>
-
-<div class="source">
-<pre>&lt;dependency&gt;
-    &lt;groupId&gt;biz.paluch.logging&lt;/groupId&gt;
-    &lt;artifactId&gt;logstash-gelf&lt;/artifactId&gt;
-    &lt;version&gt;1.6.0&lt;/version&gt;
-    &lt;classifier&gt;logging-module&lt;/classifier&gt;
-&lt;/dependency&gt;
-</pre></div>
-<p>or <a class="externalLink" href="http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/1.6.0/logstash-gelf-1.6.0-logging-module.zip">http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/1.6.0/logstash-gelf-1.6.0-logging-module.zip</a></p></div>
+<ul>
+  
+<li>Level greater FATAL: 0</li>
+  
+<li>Level is less or equal to FATAL: 2</li>
+  
+<li>Level is greater to SEVERE: 2</li>
+  
+<li>Level is greater to ERROR: 2</li>
+  
+<li>Level is less or equal to ERROR or SEVERE: 3</li>
+  
+<li>Level is less or equal to WARN: 4</li>
+  
+<li>Level is less or equal to INFO: 6</li>
+  
+<li>Level is less or equal to CONFIG/DEBUG: 7</li>
+</ul></div>
                   </div>
             </div>
           </div>
