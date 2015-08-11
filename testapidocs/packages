@@ -7,3 +7,4 @@ biz.paluch.logging.gelf.jul
 biz.paluch.logging.gelf.standalone
 biz.paluch.logging.gelf.intern
 biz.paluch.logging.gelf.log4j2
+biz.paluch.logging.gelf.wildfly
