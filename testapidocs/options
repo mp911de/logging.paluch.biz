@@ -15,10 +15,10 @@
 -docencoding
 'UTF-8'
 -doctitle
-'logstash logging connectors 1.7.0 Test API'
+'logstash logging connectors 1.7.1-SNAPSHOT Test API'
 -link
 'http://java.sun.com/javase/6/docs/api'
 -use
 -version
 -windowtitle
-'logstash logging connectors 1.7.0 Test API'
+'logstash logging connectors 1.7.1-SNAPSHOT Test API'
