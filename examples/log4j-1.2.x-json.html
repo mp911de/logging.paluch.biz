@@ -100,12 +100,10 @@
         log4j v1.2.x</a>
             </li>
                 
-      <li>
+      <li class="active">
   
-                          <a href="../examples/log4j-1.2.x-json.html" title="log4j v1.2.x JSON Layout">
-          <span class="none"></span>
-        log4j v1.2.x JSON Layout</a>
-            </li>
+            <a href="#"><span class="none"></span>log4j v1.2.x JSON Layout</a>
+          </li>
                 
       <li>
   
@@ -128,10 +126,12 @@
         WildFly</a>
             </li>
                 
-      <li class="active">
+      <li>
   
-            <a href="#"><span class="none"></span>WildFly JSON Formatter</a>
-          </li>
+                          <a href="../examples/wildfly-json.html" title="WildFly JSON Formatter">
+          <span class="none"></span>
+        WildFly JSON Formatter</a>
+            </li>
                 
       <li>
   
@@ -242,7 +242,7 @@
                 
         <div id="bodyColumn"  class="span10" >
                                   
-            <h1>WildFly JSON Formatter</h1>
+            <h1>log4j 1.2.x JSON Layout</h1>
 <p>Following settings can be used:</p>
 
 <table border="0" class="table table-striped">
@@ -265,7 +265,7 @@
       
 <td align="center">End of line string </td>
       
-<td align="center"><tt>\n</tt> </td>
+<td align="center">platform dependent default value, see <tt>System.getProperty(&quot;line.separator&quot;)</tt> </td>
     </tr>
     
 <tr class="a">
@@ -335,7 +335,7 @@
       
 <td>additionalFields </td>
       
-<td align="center">Send additional static fields. The fields are specified as key-value pairs are comma-separated. Example: <tt>additionalFields=fieldName=Value,fieldName2=Value2</tt> </td>
+<td align="center">Send additional static fields. The fields are specified as key-value pairs are comma-separated. Example: <tt>GelfLogHandler.additionalFields=fieldName=Value,fieldName2=Value2</tt> </td>
       
 <td align="center">none </td>
     </tr>
@@ -396,75 +396,39 @@
     &quot;timestamp&quot;: &quot;1439321132.734&quot;
 }
 </pre></div>
-<p>Default line break is <tt>\n</tt>, JSON objects are separated by line breaks only.</p>
+<p>Default line break depends on the platform, JSON objects are separated by line breaks only.</p>
 <div class="section">
-<h2>Preliminary Steps<a name="Preliminary_Steps"></a></h2>
-<p>If you want to get started with the logstash-gelf support for WildFly, you will need to integrate logstash-gelf as a module within the server. It is possible to create the module manually, but it&#x2019;s easier to use the prepackaged binary. Please follow the steps to integrate the module:</p>
+<h2>log4j Configuration<a name="log4j_Configuration"></a></h2>
+<p>Properties:</p>
 
-<ol style="list-style-type: decimal">
-  
-<li>Obtain the logging module from <a class="externalLink" href="http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/${logstash-gelf-release-version}/logstash-gelf-${logstash-gelf-release-version}-logging-module.zip">Maven</a> or <a class="externalLink" href="https://github.com/mp911de/logstash-gelf/releases/download/logstash-gelf-${logstash-gelf-release-version}/logstash-gelf-${logstash-gelf-release-version}-logging-module.zip">Github</a></li>
-  
-<li>Extract the module to <tt>&lt;WildFly Home&gt;/modules/system/layers/base</tt>.</li>
-  
-<li>Configure the logging subsystem by either adopting the changes in the XML files or by using the CLI</li>
-</ol></div>
-<div class="section">
-<h2>WildFly 8/WildFly 9/WildFly 10 Logging configuration<a name="WildFly_8WildFly_9WildFly_10_Logging_configuration"></a></h2>
-<p>XML Configuration:</p>
-
-<div class="source"><pre class="prettyprint linenums">&lt;formatter name=&quot;JsonFormatter&quot;&gt;
-    &lt;custom-formatter module=&quot;biz.paluch.logging&quot; class=&quot;biz.paluch.logging.gelf.wildfly.WildFlyJsonFormatter&quot;&gt;
-        &lt;properties&gt;
-            &lt;property name=&quot;version&quot; value=&quot;1.0&quot; /&gt;
-            &lt;property name=&quot;facility&quot; value=&quot;java-test&quot; /&gt;
-            &lt;property name=&quot;fields&quot; value=&quot;Time,Severity,ThreadName,SourceClassName,SourceMethodName,SourceSimpleClassName,LoggerName,NDC&quot; /&gt;
-            &lt;property name=&quot;extractStackTrace&quot; value=&quot;true&quot; /&gt;
-            &lt;property name=&quot;filterStackTrace&quot; value=&quot;true&quot; /&gt;
-            &lt;property name=&quot;mdcProfiling&quot; value=&quot;true&quot; /&gt;
-            &lt;property name=&quot;timestampPattern&quot; value=&quot;yyyy-MM-dd HH:mm:ss,SSSS&quot; /&gt;
-            &lt;property name=&quot;additionalFields&quot; value=&quot;fieldName1=fieldValue1,fieldName2=fieldValue2&quot; /&gt;
-            &lt;property name=&quot;mdcFields&quot; value=&quot;mdcField1,mdcField2&quot; /&gt;
-            &lt;property name=&quot;dynamicMdcFields&quot; value=&quot;mdc.*,(mdc|MDC)fields&quot; /&gt;
-            &lt;property name=&quot;includeFullMdc&quot; value=&quot;true&quot; /&gt;
-        &lt;/properties&gt;
-    &lt;/custom-handler&gt;
-&lt;/formatter&gt;
-
-&lt;file-handler name=&quot;JsonLog&quot;&gt;
-    &lt;file relative-to=&quot;jboss.server.log.dir&quot; path=&quot;server.json&quot;/&gt;
-&lt;/file-handler&gt;
-...
-
-&lt;root-logger&gt;
-    &lt;level name=&quot;INFO&quot;/&gt;
-    &lt;handlers&gt;
-        &lt;handler name=&quot;FILE&quot;/&gt;
-        &lt;handler name=&quot;CONSOLE&quot;/&gt;
-        &lt;handler name=&quot;JsonLog&quot;/&gt;
-    &lt;/handlers&gt;
-&lt;/root-logger&gt;
+<div class="source"><pre class="prettyprint linenums">log4j.appender.file.layout=biz.paluch.logging.gelf.log4j.GelfLayout
+log4j.appender.file.layout.Version=1.0
+log4j.appender.file.layout.Facility=java-test
+log4j.appender.file.layout.ExtractStackTrace=true
+log4j.appender.file.layout.FilterStackTrace=true
+log4j.appender.file.layout.MdcProfiling=true
+log4j.appender.file.layout.TimestampPattern=yyyy-MM-dd HH:mm:ss,SSSS
+log4j.appender.file.layout.AdditionalFields=fieldName1=fieldValue1,fieldName2=fieldValue2
+log4j.appender.file.layout.MdcFields=mdcField1,mdcField2
+log4j.appender.file.layout.DynamicMdcFields=mdc.*,(mdc|MDC)fields
+log4j.appender.file.layout.IncludeFullMdc=true
 </pre></div>
-<p>CLI Configuration:</p>
+<p>XML:</p>
 
-<div class="source"><pre class="prettyprint linenums">/subsystem=logging/custom-formatter=JsonFormatter/:add(module=biz.paluch.logging,class=biz.paluch.logging.gelf.wildfly.WildFlyJsonFormatter,properties={ \
-       version=&quot;1.0&quot;, \
-       facility=&quot;java-test&quot;, \
-       fields=&quot;Time,Severity,ThreadName,SourceClassName,SourceMethodName,SourceSimpleClassName,LoggerName,NDC&quot;, \
-       extractStackTrace=true, \
-       filterStackTrace=true, \
-       mdcProfiling=true, \
-       timestampPattern=&quot;yyyy-MM-dd HH:mm:ss,SSSS&quot;, \
-       additionalFields=&quot;fieldName1=fieldValue1,fieldName2=fieldValue2&quot;, \
-       mdcFields=&quot;mdcField1,mdcField2&quot; \
-       dynamicMdcFields=&quot;mdc.*,(mdc|MDC)fields&quot; \
-       includeFullMdc=true \
-})
-
-/subsystem=logging/file-handler=JsonLog/:add(file={&quot;relative-to&quot;=&gt;&quot;jboss.server.log.dir&quot;, path=server.json}, \
-        level=ALL,named-formatter=JsonFormatter)
-
-/subsystem=logging/root-logger=ROOT/:add-handler(name=JsonLog)
+<div class="source"><pre class="prettyprint linenums">&lt;appender name=&quot;file&quot; class=&quot;org.apache.log4j.FileAppender&quot;&gt;
+    &lt;param name=&quot;file&quot; value=&quot;logfile.log&quot; /&gt;
+    &lt;layout class=&quot;biz.paluch.logging.gelf.log4j.GelfLayout&quot;&gt;
+        &lt;param name=&quot;Facility&quot; value=&quot;java-test&quot; /&gt;
+        &lt;param name=&quot;ExtractStackTrace&quot; value=&quot;true&quot; /&gt;
+        &lt;param name=&quot;FilterStackTrace&quot; value=&quot;true&quot; /&gt;
+        &lt;param name=&quot;MdcProfiling&quot; value=&quot;true&quot; /&gt;
+        &lt;param name=&quot;TimestampPattern&quot; value=&quot;yyyy-MM-dd HH:mm:ss,SSSS&quot; /&gt;
+        &lt;param name=&quot;AdditionalFields&quot; value=&quot;fieldName1=fieldValue1,fieldName2=fieldValue2&quot; /&gt;
+        &lt;param name=&quot;MdcFields&quot; value=&quot;mdcField1,mdcField2&quot; /&gt;
+        &lt;param name=&quot;DynamicMdcFields&quot; value=&quot;mdc.*,(mdc|MDC)fields&quot; /&gt;
+        &lt;param name=&quot;IncludeFullMdc&quot; value=&quot;true&quot; /&gt;
+    &lt;/layout&gt;
+&lt;/appender&gt;
 </pre></div></div>
                   </div>
             </div>
