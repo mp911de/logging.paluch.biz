@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>JsonWriter.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern</a> &gt; <span class="el_source">JsonWriter.java</span></div><h1>JsonWriter.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern;
+
+import java.util.Map;
+
+/**
+ * Writer to write an object in JSON representation. Strings are UTF-8 encoded with a fast-path implementation. UTF-8 characters
+ * are escaped with using control sequences {@code \t, \b, ...} or UTF-8 escape sequences {@code \u0aD5}.
+ * 
+ * @author Mark Paluch
+ */
+<span class="nc" id="L11">class JsonWriter {</span>
+
+<span class="fc" id="L13">    private static final byte[] NULL = &quot;null&quot;.getBytes();</span>
+<span class="fc" id="L14">    private static final byte[] TRUE = &quot;true&quot;.getBytes();</span>
+<span class="fc" id="L15">    private static final byte[] FALSE = &quot;false&quot;.getBytes();</span>
+
+<span class="fc" id="L17">    private static final byte[] B = &quot;\\b&quot;.getBytes();</span>
+<span class="fc" id="L18">    private static final byte[] T = &quot;\\t&quot;.getBytes();</span>
+<span class="fc" id="L19">    private static final byte[] N = &quot;\\n&quot;.getBytes();</span>
+<span class="fc" id="L20">    private static final byte[] F = &quot;\\f&quot;.getBytes();</span>
+<span class="fc" id="L21">    private static final byte[] R = &quot;\\r&quot;.getBytes();</span>
+<span class="fc" id="L22">    private static final byte[] QUOT = &quot;\\\&quot;&quot;.getBytes();</span>
+<span class="fc" id="L23">    private static final byte[] BSLASH = &quot;\\\\&quot;.getBytes();</span>
+<span class="fc" id="L24">    private static final byte[] Q_AND_C = &quot;\&quot;:&quot;.getBytes();</span>
+<span class="fc" id="L25">    private static final byte[] NaN = &quot;NaN&quot;.getBytes();</span>
+<span class="fc" id="L26">    private static final byte[] Infinite = &quot;Infinite&quot;.getBytes();</span>
+
+    private static final byte WRITE_UTF_UNKNOWN = (byte) '?';
+
+<span class="fc" id="L30">    private static final char[] HEX_CHARS = &quot;0123456789ABCDEF&quot;.toCharArray();</span>
+    private static final byte[] HEX_BYTES;
+    
+    static {
+<span class="fc" id="L34">        int len = HEX_CHARS.length;</span>
+<span class="fc" id="L35">        HEX_BYTES = new byte[len];</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L37">            HEX_BYTES[i] = (byte) HEX_CHARS[i];</span>
+        }
+<span class="fc" id="L39">    }</span>
+
+    /**
+     * Start JSON object.
+     * 
+     * @param out
+     */
+    public static void writeObjectStart(OutputAccessor out) {
+<span class="fc" id="L47">        out.write('{');</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * End JSON object.
+     * 
+     * @param out
+     */
+    public static void writeObjectEnd(OutputAccessor out) {
+<span class="fc" id="L56">        out.write('}');</span>
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * Write key-value separator
+     * 
+     * @param out
+     */
+    public static void writeKeyValueSeparator(OutputAccessor out) {
+<span class="fc" id="L65">        out.write(',');</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Utility method to write a {@link Map} into a JSON representation.
+     * 
+     * @param out
+     * @param map
+     */
+    public static void toJSONString(OutputAccessor out, Map&lt;String, ? extends Object&gt; map) {
+
+<span class="fc" id="L76">        writeObjectStart(out);</span>
+<span class="fc" id="L77">        boolean first = true;</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (Map.Entry&lt;String, ? extends Object&gt; entry : map.entrySet()) {</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (first) {</span>
+<span class="fc" id="L82">                first = false;</span>
+            } else {
+<span class="fc" id="L84">                writeKeyValueSeparator(out);</span>
+            }
+
+<span class="fc" id="L87">            writeMapEntry(out, entry.getKey(), entry.getValue());</span>
+<span class="fc" id="L88">        }</span>
+
+<span class="fc" id="L90">        writeObjectEnd(out);</span>
+
+<span class="fc" id="L92">    }</span>
+
+    /**
+     * Write a map entry.
+     * 
+     * @param out
+     * @param key
+     * @param value
+     */
+    public static void writeMapEntry(OutputAccessor out, String key, Object value) {
+
+<span class="fc" id="L103">        out.write((byte) '\&quot;');</span>
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (key == null)</span>
+<span class="nc" id="L106">            out.write(NULL);</span>
+        else {
+<span class="fc" id="L108">            writeUtf8(out, key);</span>
+        }
+
+<span class="fc" id="L111">        out.write(Q_AND_C);</span>
+
+<span class="fc" id="L113">        toJSONString(out, value);</span>
+<span class="fc" id="L114">    }</span>
+
+    /**
+     * Convert an object to JSON text. Encode the value as UTF-8 text, or &quot;null&quot; if value is null or it's an NaN or an INF
+     * number.
+     */
+    private static void toJSONString(OutputAccessor out, Object value) {
+
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L123">            out.write(NULL);</span>
+<span class="nc" id="L124">            return;</span>
+        }
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (value instanceof String) {</span>
+<span class="fc" id="L128">            out.write((byte) '\&quot;');</span>
+<span class="fc" id="L129">            writeUtf8(out, (String) value);</span>
+<span class="fc" id="L130">            out.write((byte) '\&quot;');</span>
+<span class="fc" id="L131">            return;</span>
+        }
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (value instanceof Double) {</span>
+<span class="fc" id="L135">            Double d = (Double) value;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (d.isNaN()) {</span>
+<span class="fc" id="L137">                out.write((byte) '\&quot;');</span>
+<span class="fc" id="L138">                out.write(NaN);</span>
+<span class="fc" id="L139">                out.write((byte) '\&quot;');</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            } else if (d.isInfinite()) {</span>
+<span class="fc" id="L141">                out.write((byte) '\&quot;');</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                if (d == Double.NEGATIVE_INFINITY) {</span>
+<span class="fc" id="L143">                    out.write('-');</span>
+
+                }
+<span class="fc" id="L146">                out.write(Infinite);</span>
+<span class="fc" id="L147">                out.write((byte) '\&quot;');</span>
+            } else {
+<span class="fc" id="L149">                writeAscii(out, value.toString());</span>
+
+            }
+<span class="fc" id="L152">            return;</span>
+        }
+
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (value instanceof Float) {</span>
+<span class="nc" id="L156">            Float f = (Float) value;</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (f.isNaN()) {</span>
+<span class="nc" id="L158">                out.write((byte) '\&quot;');</span>
+<span class="nc" id="L159">                out.write(NaN);</span>
+<span class="nc" id="L160">                out.write((byte) '\&quot;');</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            } else if (f.isInfinite()) {</span>
+<span class="nc" id="L162">                out.write((byte) '\&quot;');</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                if (f == Float.NEGATIVE_INFINITY) {</span>
+<span class="nc" id="L164">                    out.write('-');</span>
+
+                }
+<span class="nc" id="L167">                out.write(Infinite);</span>
+<span class="nc" id="L168">                out.write((byte) '\&quot;');</span>
+            } else {
+<span class="nc" id="L170">                writeAscii(out, value.toString());</span>
+
+            }
+<span class="nc" id="L173">            return;</span>
+        }
+
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (value instanceof Number) {</span>
+<span class="fc" id="L177">            writeAscii(out, value.toString());</span>
+        }
+
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        if (value instanceof Boolean) {</span>
+
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if ((Boolean) value) {</span>
+<span class="nc" id="L183">                out.write(TRUE);</span>
+            } else {
+<span class="nc" id="L185">                out.write(FALSE);</span>
+            }
+        }
+<span class="fc" id="L188">    }</span>
+
+    private static void writeUtf8(OutputAccessor out, String string) {
+<span class="fc" id="L191">        writeUtf8(out, string, string.length());</span>
+<span class="fc" id="L192">    }</span>
+
+    /**
+     * Fast-Path ASCII implementation.
+     */
+    private static void writeAscii(OutputAccessor out, CharSequence seq) {
+
+        // We can use the _set methods as these not need to do any index checks and reference checks.
+        // This is possible as we called ensureWritable(...) before.
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        for (int i = 0; i &lt; seq.length(); i++) {</span>
+<span class="fc" id="L202">            out.write((byte) seq.charAt(i));</span>
+        }
+<span class="fc" id="L204">    }</span>
+
+    /**
+     * Fast-Path UTF-8 implementation.
+     */
+    private static void writeUtf8(OutputAccessor out, CharSequence seq, int len) {
+
+        // We can use the _set methods as these not need to do any index checks and reference checks.
+        // This is possible as we called ensureWritable(...) before.
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc" id="L214">            char c = seq.charAt(i);</span>
+
+<span class="fc bfc" id="L216" title="All 8 branches covered.">            switch (c) {</span>
+                case '\b':
+<span class="fc" id="L218">                    out.write(B);</span>
+<span class="fc" id="L219">                    continue;</span>
+                case '\t':
+<span class="fc" id="L221">                    out.write(T);</span>
+<span class="fc" id="L222">                    continue;</span>
+                case '\n':
+<span class="fc" id="L224">                    out.write(N);</span>
+<span class="fc" id="L225">                    continue;</span>
+                case '\f':
+<span class="fc" id="L227">                    out.write(F);</span>
+<span class="fc" id="L228">                    continue;</span>
+                case '\r':
+<span class="fc" id="L230">                    out.write(R);</span>
+<span class="fc" id="L231">                    continue;</span>
+                case '\&quot;':
+<span class="fc" id="L233">                    out.write(QUOT);</span>
+<span class="fc" id="L234">                    continue;</span>
+                case '\\':
+<span class="fc" id="L236">                    out.write(BSLASH);</span>
+<span class="fc" id="L237">                    continue;</span>
+            }
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            if (c &lt; 0x20) {</span>
+<span class="fc" id="L241">                escape(out, c);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            } else if (c &lt; 0x80) {</span>
+<span class="fc" id="L243">                out.write((byte) c);</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">            } else if (c &lt; 0x800) {</span>
+<span class="fc" id="L245">                out.write((byte) (0xc0 | (c &gt;&gt; 6)));</span>
+<span class="fc" id="L246">                out.write((byte) (0x80 | (c &amp; 0x3f)));</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            } else if (isSurrogate(c)) {</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">                if (!Character.isHighSurrogate(c)) {</span>
+<span class="nc" id="L249">                    out.write(WRITE_UTF_UNKNOWN);</span>
+<span class="nc" id="L250">                    continue;</span>
+                }
+
+                final char c2;
+                try {
+                    // Surrogate Pair consumes 2 characters. Optimistically try to get the next character to avoid
+                    // duplicate bounds checking with charAt. If an IndexOutOfBoundsException is thrown we will
+                    // re-throw a more informative exception describing the problem.
+<span class="fc" id="L258">                    c2 = seq.charAt(++i);</span>
+<span class="nc" id="L259">                } catch (IndexOutOfBoundsException e) {</span>
+<span class="nc" id="L260">                    out.write(WRITE_UTF_UNKNOWN);</span>
+<span class="nc" id="L261">                    break;</span>
+<span class="fc" id="L262">                }</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">                if (!Character.isLowSurrogate(c2)) {</span>
+<span class="nc" id="L264">                    out.write(WRITE_UTF_UNKNOWN);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                    out.write((byte) (Character.isHighSurrogate(c2) ? WRITE_UTF_UNKNOWN : c2));</span>
+<span class="nc" id="L266">                    continue;</span>
+                }
+<span class="fc" id="L268">                int codePoint = Character.toCodePoint(c, c2);</span>
+                // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+<span class="fc" id="L270">                escape(out, c);</span>
+<span class="fc" id="L271">                escape(out, codePoint);</span>
+<span class="fc" id="L272">            } else {</span>
+<span class="fc" id="L273">                out.write((byte) (0xe0 | (c &gt;&gt; 12)));</span>
+<span class="fc" id="L274">                out.write((byte) (0x80 | ((c &gt;&gt; 6) &amp; 0x3f)));</span>
+<span class="fc" id="L275">                out.write((byte) (0x80 | (c &amp; 0x3f)));</span>
+            }
+        }
+<span class="fc" id="L278">    }</span>
+
+    /**
+     * Write a UTF escape sequence using either an one or two-byte seqience.
+     * 
+     * @param out the output
+     * @param charToEscape the character to escape.
+     */
+    private static void escape(OutputAccessor out, int charToEscape) {
+
+<span class="fc" id="L288">        out.write('\\');</span>
+<span class="fc" id="L289">        out.write('u');</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">        if (charToEscape &gt; 0xFF) {</span>
+<span class="fc" id="L291">            int hi = (charToEscape &gt;&gt; 8) &amp; 0xFF;</span>
+<span class="fc" id="L292">            out.write(HEX_BYTES[hi &gt;&gt; 4]);</span>
+<span class="fc" id="L293">            out.write(HEX_BYTES[hi &amp; 0xF]);</span>
+<span class="fc" id="L294">            charToEscape &amp;= 0xFF;</span>
+<span class="fc" id="L295">        } else {</span>
+<span class="fc" id="L296">            out.write((byte) '0');</span>
+<span class="fc" id="L297">            out.write((byte) '0');</span>
+        }
+        // We know it's a control char, so only the last 2 chars are non-0
+<span class="fc" id="L300">        out.write(HEX_BYTES[charToEscape &gt;&gt; 4]);</span>
+<span class="fc" id="L301">        out.write(HEX_BYTES[charToEscape &amp; 0xF]);</span>
+<span class="fc" id="L302">    }</span>
+
+    /**
+     * Determine if {@code c} lies within the range of values defined for
+     * &lt;a href=&quot;http://unicode.org/glossary/#surrogate_code_point&quot;&gt;Surrogate Code Point&lt;/a&gt;.
+     * 
+     * @param c the character to check.
+     * @return {@code true} if {@code c} lies within the range of values defined for
+     *         &lt;a href=&quot;http://unicode.org/glossary/#surrogate_code_point&quot;&gt;Surrogate Code Point&lt;/a&gt;. {@code false} otherwise.
+     */
+    private static boolean isSurrogate(char c) {
+<span class="fc bfc" id="L313" title="All 4 branches covered.">        return c &gt;= '\uD800' &amp;&amp; c &lt;= '\uDFFF';</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

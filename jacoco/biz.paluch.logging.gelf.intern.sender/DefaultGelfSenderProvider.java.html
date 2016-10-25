@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DefaultGelfSenderProvider.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">DefaultGelfSenderProvider.java</span></div><h1>DefaultGelfSenderProvider.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+
+import biz.paluch.logging.gelf.intern.GelfSender;
+import biz.paluch.logging.gelf.intern.GelfSenderConfiguration;
+import biz.paluch.logging.gelf.intern.GelfSenderProvider;
+
+/**
+ * Default provider for {@link GelfSender} that creates UDP, TCP and HTTP senders.
+ * 
+ * @author https://github.com/Batigoal/logstash-gelf.git
+ * @author Mark Paluch
+ * @author Aleksandar Stojadinovic
+ */
+<span class="fc" id="L26">public class DefaultGelfSenderProvider implements GelfSenderProvider {</span>
+
+	/**
+	 * Default GELF port.
+	 */
+    public static final int DEFAULT_PORT = 12201;
+
+    private static final Map&lt;String, GelfSenderProducer&gt; factories;
+
+<span class="fc" id="L35">    private static final GelfSenderProducer tcpSenderFactory = new GelfSenderProducer() {</span>
+
+        @Override
+        public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
+
+<span class="fc" id="L40">            int defaultTimeoutMs = (int) TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS);</span>
+
+<span class="fc" id="L42">            URI uri = URI.create(host);</span>
+
+<span class="fc" id="L44">            Map&lt;String, String&gt; params = QueryStringParser.parse(uri);</span>
+<span class="fc" id="L45">            int connectionTimeMs = (int) QueryStringParser.getTimeAsMs(params, GelfTCPSender.CONNECTION_TIMEOUT, defaultTimeoutMs);</span>
+<span class="fc" id="L46">            int readTimeMs = (int) QueryStringParser.getTimeAsMs(params, GelfTCPSender.READ_TIMEOUT, defaultTimeoutMs);</span>
+<span class="fc" id="L47">            int deliveryAttempts = QueryStringParser.getInt(params, GelfTCPSender.RETRIES, 1);</span>
+<span class="fc" id="L48">            boolean keepAlive = QueryStringParser.getString(params, GelfTCPSender.KEEPALIVE, false);</span>
+
+<span class="fc" id="L50">            String tcpGraylogHost = QueryStringParser.getHost(uri);</span>
+<span class="fc" id="L51">            SocketFactory socketFactory = SocketFactory.getDefault();</span>
+
+<span class="fc" id="L53">            return new GelfTCPSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
+<span class="fc" id="L54">                    configuration.getErrorReporter());</span>
+        }
+    };
+
+<span class="fc" id="L58">    private static final GelfSenderProducer tcpSslSenderFactory = new GelfSenderProducer() {</span>
+
+        @Override
+        public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
+
+<span class="nc" id="L63">            int defaultTimeoutMs = (int) TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS);</span>
+
+<span class="nc" id="L65">            URI uri = URI.create(host);</span>
+
+<span class="nc" id="L67">            Map&lt;String, String&gt; params = QueryStringParser.parse(uri);</span>
+<span class="nc" id="L68">            int connectionTimeMs = (int) QueryStringParser.getTimeAsMs(params, GelfTCPSender.CONNECTION_TIMEOUT, defaultTimeoutMs);</span>
+<span class="nc" id="L69">            int readTimeMs = (int) QueryStringParser.getTimeAsMs(params, GelfTCPSender.READ_TIMEOUT, defaultTimeoutMs);</span>
+<span class="nc" id="L70">            int deliveryAttempts = QueryStringParser.getInt(params, GelfTCPSender.RETRIES, 1);</span>
+<span class="nc" id="L71">            boolean keepAlive = QueryStringParser.getString(params, GelfTCPSender.KEEPALIVE, false);</span>
+
+<span class="nc" id="L73">            String tcpGraylogHost = QueryStringParser.getHost(uri);</span>
+
+            try {
+<span class="nc" id="L76">                return new GelfTCPSSLSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
+<span class="nc" id="L77">                        configuration.getErrorReporter(), SSLContext.getDefault());</span>
+<span class="nc" id="L78">            } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L79">                throw new IllegalStateException(e);</span>
+            }
+        }
+    };
+
+<span class="fc" id="L84">    private static final GelfSenderProducer udpSenderFactory = new GelfSenderProducer() {</span>
+
+        @Override
+        public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
+
+<span class="fc" id="L89">            URI uri = URI.create(host);</span>
+<span class="fc" id="L90">            String udpGraylogHost = QueryStringParser.getHost(uri);</span>
+<span class="fc" id="L91">            return new GelfUDPSender(udpGraylogHost, port, configuration.getErrorReporter());</span>
+        }
+    };
+
+<span class="fc" id="L95">    private static final GelfSenderProducer defaultSenderFactory = new GelfSenderProducer() {</span>
+
+        @Override
+        public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
+<span class="fc" id="L99">            return new GelfUDPSender(host, port, configuration.getErrorReporter());</span>
+        }
+    };
+
+<span class="fc" id="L103">    private static final GelfSenderProducer httpSenderFactory = new GelfSenderProducer() {</span>
+
+        @Override
+        public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
+
+<span class="fc" id="L108">            int defaultTimeoutMs = (int) TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS);</span>
+<span class="fc" id="L109">            URL url = new URL(host);</span>
+
+<span class="fc" id="L111">            return new GelfHTTPSender(url, defaultTimeoutMs, defaultTimeoutMs, configuration.getErrorReporter());</span>
+        }
+    };
+
+    static {
+
+<span class="fc" id="L117">    	Map&lt;String, GelfSenderProducer&gt; prefixToFactory = new HashMap&lt;String, GelfSenderProducer&gt;();</span>
+<span class="fc" id="L118">        prefixToFactory.put(&quot;tcp:&quot;, tcpSenderFactory);</span>
+<span class="fc" id="L119">        prefixToFactory.put(&quot;ssl:&quot;, tcpSslSenderFactory);</span>
+<span class="fc" id="L120">        prefixToFactory.put(&quot;udp:&quot;, udpSenderFactory);</span>
+<span class="fc" id="L121">        prefixToFactory.put(&quot;http&quot;, httpSenderFactory);</span>
+
+<span class="fc" id="L123">        factories = Collections.unmodifiableMap(prefixToFactory);</span>
+
+<span class="fc" id="L125">    }</span>
+
+    @Override
+    public boolean supports(String host) {
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        return host != null;</span>
+    }
+
+    @Override
+    public GelfSender create(GelfSenderConfiguration configuration) throws IOException {
+
+<span class="fc" id="L135">        String graylogHost = configuration.getHost();</span>
+
+<span class="fc" id="L137">        int port = configuration.getPort();</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (port == 0) {</span>
+<span class="fc" id="L139">            port = DEFAULT_PORT;</span>
+        }
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        for (Map.Entry&lt;String, GelfSenderProducer&gt; entry : factories.entrySet()) {</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (graylogHost.startsWith(entry.getKey())) {</span>
+<span class="fc" id="L144">                return entry.getValue().create(configuration, graylogHost, port);</span>
+            }
+<span class="fc" id="L146">        }</span>
+
+<span class="fc" id="L148">        return defaultSenderFactory.create(configuration, graylogHost, port);</span>
+
+    }
+
+    private interface GelfSenderProducer {
+
+        /**
+         * Produce a {@link GelfSender} using {@code configuration}, {@code host} and {@code port},
+         * 
+         * @param configuration
+         * @param host
+         * @param port
+         * @return
+         * @throws IOException
+         */
+        GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

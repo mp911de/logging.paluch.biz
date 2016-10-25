@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PoolingGelfMessageBuilder.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern</a> &gt; <span class="el_source">PoolingGelfMessageBuilder.java</span></div><h1>PoolingGelfMessageBuilder.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern;
+
+import biz.paluch.logging.gelf.GelfMessageBuilder;
+
+/**
+ * @author Mark Paluch
+ */
+public class PoolingGelfMessageBuilder extends GelfMessageBuilder {
+
+<span class="fc" id="L10">    private PoolingGelfMessageBuilder() {</span>
+<span class="fc" id="L11">    }</span>
+
+    /**
+     * Creates a new instance of the GelfMessageBuilder.
+     *
+     * @return GelfMessageBuilder
+     */
+    public static PoolingGelfMessageBuilder newInstance() {
+<span class="fc" id="L19">        return new PoolingGelfMessageBuilder();</span>
+    }
+
+    /**
+     * Recycle this {@link GelfMessageBuilder} to a default state.
+     *
+     * @return {@code this} {@link GelfMessageBuilder}
+     */
+    public GelfMessageBuilder recycle() {
+
+<span class="fc" id="L29">        version = GelfMessage.GELF_VERSION;</span>
+<span class="fc" id="L30">        host = null;</span>
+<span class="fc" id="L31">        shortMessage = null;</span>
+<span class="fc" id="L32">        fullMessage = null;</span>
+<span class="fc" id="L33">        javaTimestamp = 0;</span>
+<span class="fc" id="L34">        level = null;</span>
+<span class="fc" id="L35">        facility = GelfMessage.DEFAULT_FACILITY;</span>
+<span class="fc" id="L36">        maximumMessageSize = GelfMessage.DEFAULT_MESSAGE_SIZE;</span>
+
+<span class="fc" id="L38">        additionalFields.clear();</span>
+<span class="fc" id="L39">        additionalFieldTypes.clear();</span>
+
+<span class="fc" id="L41">        return this;</span>
+    }
+
+    /**
+     * Build a new Gelf message based on the builder settings.
+     *
+     * @return GelfMessage
+     */
+    public GelfMessage build() {
+
+<span class="fc" id="L51">        GelfMessage gelfMessage = new PoolingGelfMessage(shortMessage, fullMessage, javaTimestamp, level);</span>
+<span class="fc" id="L52">        gelfMessage.addFields(additionalFields);</span>
+<span class="fc" id="L53">        gelfMessage.setMaximumMessageSize(maximumMessageSize);</span>
+<span class="fc" id="L54">        gelfMessage.setVersion(version);</span>
+<span class="fc" id="L55">        gelfMessage.setHost(host);</span>
+<span class="fc" id="L56">        gelfMessage.setJavaTimestamp(javaTimestamp);</span>
+<span class="fc" id="L57">        gelfMessage.setFacility(facility);</span>
+<span class="fc" id="L58">        gelfMessage.setAdditionalFieldTypes(additionalFieldTypes);</span>
+
+<span class="fc" id="L60">        return gelfMessage;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

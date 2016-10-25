@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfBuffers.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">GelfBuffers.java</span></div><h1>GelfBuffers.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+
+import biz.paluch.logging.gelf.intern.GelfMessage;
+
+/**
+ * Utility to create TCP/UDP buffers from a {@link GelfMessage} by working with {@link ByteBuffer}. Buffers are provided by
+ * {@link ThreadLocal} and enlarged if the buffer size is exceeded. Enlarged buffers are returned to their originating
+ * {@link ThreadLocal}.
+ * 
+ * @author Mark Paluch
+ */
+<span class="nc" id="L15">class GelfBuffers {</span>
+
+    /**
+     * Create UDP buffers and apply auto-buffer-enlarging, if necessary.
+     *
+     * @param message
+     * @param writeBuffers
+     * @param tempBuffers
+     * @return
+     */
+    protected static ByteBuffer[] toUDPBuffers(GelfMessage message, ThreadLocal&lt;ByteBuffer&gt; writeBuffers,
+            ThreadLocal&lt;ByteBuffer&gt; tempBuffers) {
+
+        while (true) {
+
+            try {
+<span class="fc" id="L31">                return message.toUDPBuffers(getBuffer(writeBuffers), getBuffer(tempBuffers));</span>
+<span class="nc" id="L32">            } catch (BufferOverflowException e) {</span>
+<span class="nc" id="L33">                enlargeBuffer(writeBuffers);</span>
+<span class="nc" id="L34">                enlargeBuffer(tempBuffers);</span>
+<span class="nc" id="L35">            }</span>
+        }
+    }
+
+    /**
+     * Create TCP buffer and apply auto-buffer-enlarging, if necessary.
+     * 
+     * @param message
+     * @param writeBuffers
+     * @return
+     */
+    protected static ByteBuffer toTCPBuffer(GelfMessage message, ThreadLocal&lt;ByteBuffer&gt; writeBuffers) {
+
+        while (true) {
+
+            try {
+<span class="fc" id="L51">                return message.toTCPBuffer(getBuffer(writeBuffers));</span>
+<span class="fc" id="L52">            } catch (BufferOverflowException e) {</span>
+<span class="fc" id="L53">                enlargeBuffer(writeBuffers);</span>
+<span class="fc" id="L54">            }</span>
+        }
+    }
+
+    static private void enlargeBuffer(ThreadLocal&lt;ByteBuffer&gt; buffers) {
+
+<span class="fc" id="L60">        ByteBuffer newBuffer = ByteBuffer.allocateDirect(calculateNewBufferSize(buffers.get().capacity()));</span>
+<span class="fc" id="L61">        buffers.set(newBuffer);</span>
+<span class="fc" id="L62">    }</span>
+
+    private static ByteBuffer getBuffer(ThreadLocal&lt;ByteBuffer&gt; buffers) {
+<span class="fc" id="L65">        return (ByteBuffer) buffers.get().clear();</span>
+    }
+
+    private static int calculateNewBufferSize(int capacity) {
+<span class="fc" id="L69">        return (int) (capacity * 1.5);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

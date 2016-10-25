@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>StackTraceFilter.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">StackTraceFilter.java</span></div><h1>StackTraceFilter.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
+
+import static biz.paluch.logging.RuntimeContainerProperties.getProperty;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
+import biz.paluch.logging.gelf.intern.Closer;
+
+/**
+ * Filtering Facility for Stack-Traces. This is to shorten very long Traces. It leads to a very short Trace containing only the
+ * interesting parts. Please provide an own Resource /StackTraceFilter.packages with the packages if you want to use a custom
+ * filter (one package per line)
+ *
+ * &lt;code&gt;
+ # Packages to filter
+ org.h2
+ org.apache.catalina
+ org.apache.coyote
+ org.apache.tomcat
+ com.arjuna
+ org.apache.cxf
+ * &lt;/code&gt;
+ *
+ * Filtered Example: &lt;code&gt;
+ Exception: javax.faces.FacesException: #{documentQueryController.executeQuery}: com.kaufland.dms.commons.exception.DmsTechnicalException: java.io.IOException: aargh
+ Caused by: javax.faces.el.EvaluationException: com.kaufland.dms.commons.exception.DmsTechnicalException: java.io.IOException: aargh
+ Caused by: com.kaufland.dms.commons.exception.DmsTechnicalException: java.io.IOException: aargh
+ Caused by: java.io.IOException: aargh
+     at com.kaufland.dms.core.business.document.query.DocumentQueryBO.queryDocuments(DocumentQueryBO.java:76)
+         52 lines skipped for [sun., org.jboss, java.lang.reflect.Method]
+     at com.kaufland.dms.core.business.document.query.DocumentQueryBO$$$view47.queryDocuments(Unknown Source)
+     at com.kaufland.dms.core.facade.DocumentFacade.queryDocuments(DocumentFacade.java:169)
+         10 lines skipped for [sun., org.jboss, java.lang.reflect.Method]
+     at com.kaufland.dms.commons.exception.safe.ExceptionDecouplingInterceptor.interceptInvocation(ExceptionDecouplingInterceptor.java:31)
+         41 lines skipped for [sun., org.jboss, java.lang.reflect.Method]
+     at com.kaufland.dms.core.service.DocumentService$$$view37.queryDocuments(Unknown Source)
+     at com.kaufland.dms.web.ui.document.query.DocumentQueryController.executeQuery(DocumentQueryController.java:201)
+     at com.kaufland.dms.web.ui.document.query.DocumentQueryController.executeQuery(DocumentQueryController.java:196)
+         4 lines skipped for [sun., java.lang.reflect.Method]
+     at org.apache.el.parser.AstValue.invoke(AstValue.java:258)
+     at org.apache.el.MethodExpressionImpl.invoke(MethodExpressionImpl.java:278)
+         2 lines skipped for [org.jboss]
+     at com.sun.faces.facelets.el.TagMethodExpression.invoke(TagMethodExpression.java:105)
+     at javax.faces.component.MethodBindingMethodExpressionAdapter.invoke(MethodBindingMethodExpressionAdapter.java:87)
+     at com.sun.faces.application.ActionListenerImpl.processAction(ActionListenerImpl.java:101)
+     at javax.faces.component.UICommand.broadcast(UICommand.java:315)
+     at javax.faces.component.UIViewRoot.broadcastEvents(UIViewRoot.java:786)
+     at javax.faces.component.UIViewRoot.processApplication(UIViewRoot.java:1251)
+     at com.sun.faces.lifecycle.InvokeApplicationPhase.execute(InvokeApplicationPhase.java:81)
+     at com.sun.faces.lifecycle.Phase.doPhase(Phase.java:101)
+     at com.sun.faces.lifecycle.LifecycleImpl.execute(LifecycleImpl.java:118)
+     at javax.faces.webapp.FacesServlet.service(FacesServlet.java:593)
+         2 lines skipped for [org.apache.catalina]
+     at com.kaufland.dms.web.servlet.IE9CompatibilityFilter.doFilter(IE9CompatibilityFilter.java:26)
+         19 lines skipped for [org.apache.coyote, org.jboss, org.apache.catalina, org.apache.tomcat]
+     at java.lang.Thread.run(Thread.java:722)
+    &lt;/code&gt;
+ *
+ * @author Mark Paluch
+ */
+public class StackTraceFilter {
+
+    public static final String VERBOSE_LOGGING_PROPERTY = &quot;logstash-gelf.StackTraceFilter.verbose&quot;;
+<span class="fc" id="L72">    public static final String FILTER_SETTINGS = &quot;/&quot; + StackTraceFilter.class.getSimpleName() + &quot;.packages&quot;;</span>
+    
+    private static final String INDENT = &quot;\t&quot;;
+<span class="fc" id="L75">    private static final boolean VERBOSE_LOGGING = Boolean.parseBoolean(getProperty(VERBOSE_LOGGING_PROPERTY, &quot;false&quot;));</span>
+    
+    /**
+     * List of Surpressed Packages.
+     */
+    private static Set&lt;String&gt; suppressedPackages;
+
+    static {
+<span class="fc" id="L83">        loadSetttings(FILTER_SETTINGS);</span>
+<span class="fc" id="L84">    }</span>
+
+    public static void loadSetttings(String resourceName) {
+<span class="fc" id="L87">        InputStream is = null;</span>
+        try {
+<span class="fc" id="L89">            is = getStream(resourceName);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (is == null) {</span>
+<span class="fc" id="L91">                verboseLog(&quot;No &quot; + resourceName + &quot; resource present, using defaults&quot;);</span>
+<span class="fc" id="L92">                suppressedPackages = new HashSet&lt;String&gt;(getDefaults());</span>
+            } else {
+<span class="fc" id="L94">                Properties p = new Properties();</span>
+<span class="fc" id="L95">                p.load(is);</span>
+<span class="fc" id="L96">                suppressedPackages = (Set) p.keySet();</span>
+            }
+
+<span class="nc" id="L99">        } catch (IOException e) {</span>
+<span class="nc" id="L100">            verboseLog(&quot;Could not parse &quot; + resourceName + &quot; resource, using defaults&quot;);</span>
+<span class="nc" id="L101">            suppressedPackages = new HashSet&lt;String&gt;(getDefaults());</span>
+        } finally {
+<span class="pc" id="L103">            Closer.close(is);</span>
+<span class="pc" id="L104">        }</span>
+<span class="fc" id="L105">    }</span>
+
+    private static InputStream getStream(String resourceName) {
+
+<span class="fc" id="L109">        Thread thread = Thread.currentThread();</span>
+<span class="fc" id="L110">        InputStream is = StackTraceFilter.class.getResourceAsStream(resourceName);</span>
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">        if (is == null &amp;&amp; thread.getContextClassLoader() != null) {</span>
+<span class="fc" id="L112">            is = thread.getContextClassLoader().getResourceAsStream(resourceName);</span>
+        }
+<span class="fc" id="L114">        return is;</span>
+    }
+
+    public static List&lt;String&gt; getDefaults() {
+
+<span class="fc" id="L119">        return Arrays.asList(&quot;org.h2&quot;, &quot;org.apache.catalina&quot;, &quot;org.apache.coyote&quot;, &quot;org.apache.tomcat&quot;, &quot;com.arjuna&quot;,</span>
+                &quot;org.apache.cxf&quot;, &quot;org.hibernate&quot;, &quot;org.junit&quot;, &quot;org.jboss&quot;, &quot;java.lang.reflect.Method&quot;, &quot;sun.&quot;, &quot;com.sun&quot;,
+                &quot;org.eclipse&quot;, &quot;junit.framework&quot;, &quot;com.sun.faces&quot;, &quot;javax.faces&quot;, &quot;org.richfaces&quot;, &quot;org.apache.el&quot;,
+                &quot;javax.servlet&quot;);
+    }
+
+    /**
+     * Utility-Constructor.
+     */
+<span class="nc" id="L128">    private StackTraceFilter() {</span>
+
+<span class="nc" id="L130">    }</span>
+
+    /**
+     * Filter Stack-Trace
+     *
+     * @param t the throwable
+     * @return String containing the filtered Stack-Trace.
+     */
+    public static String getFilteredStackTrace(Throwable t) {
+<span class="fc" id="L139">        return getFilteredStackTrace(t, true);</span>
+    }
+
+    /**
+     * Filter Stack-Trace
+     *
+     * @param t the throwable
+     * @param shouldFilter true in case filtering should be performed. Else stack-trace as string will be returned.
+     * @return String containing the Stack-Trace.
+     */
+    public static String getFilteredStackTrace(Throwable t, boolean shouldFilter) {
+
+<span class="fc" id="L151">        StringWriter sw = new StringWriter();</span>
+<span class="fc" id="L152">        PrintWriter pw = new PrintWriter(sw);</span>
+<span class="fc" id="L153">        writeCleanStackTrace(t, pw, shouldFilter);</span>
+        
+<span class="fc" id="L155">        return sw.getBuffer().toString();</span>
+    }
+
+    private static void writeCleanStackTrace(Throwable t, PrintWriter s, boolean wantsFilter) {
+
+<span class="fc" id="L160">        s.print(&quot;Exception: &quot;);</span>
+
+<span class="fc" id="L162">        printExceptionChain(t, s);</span>
+
+<span class="fc" id="L164">        Set&lt;String&gt; skippedPackages = new HashSet&lt;String&gt;();</span>
+<span class="fc" id="L165">        int skippedLines = 0;</span>
+<span class="fc" id="L166">        boolean shouldFilter = wantsFilter;</span>
+<span class="fc" id="L167">        boolean first = true;</span>
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (StackTraceElement traceElement : getBottomThrowable(t).getStackTrace()) {</span>
+<span class="fc" id="L170">            String forbiddenPackageName = null;</span>
+
+<span class="pc bpc" id="L172" title="1 of 4 branches missed.">            if (shouldFilter &amp;&amp; !first) {</span>
+<span class="fc" id="L173">                forbiddenPackageName = tryGetForbiddenPackageName(traceElement);</span>
+            }
+
+<span class="fc" id="L176">            first = false;</span>
+
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (forbiddenPackageName == null) {</span>
+
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                if (!skippedPackages.isEmpty()) {</span>
+                    // 37 lines skipped for [org.h2, org.hibernate, sun.,
+                    // java.lang.reflect.Method, $Proxy]
+<span class="fc" id="L183">                    s.println(getSkippedPackagesMessage(skippedPackages, skippedLines));</span>
+                }
+
+                // at hib.HibExample.test(HibExample.java:18)
+<span class="fc" id="L187">                s.println(INDENT + &quot;at &quot; + traceElement);</span>
+<span class="fc" id="L188">                skippedPackages.clear();</span>
+<span class="fc" id="L189">                skippedLines = 0;</span>
+            } else {
+<span class="fc" id="L191">                skippedLines++;</span>
+<span class="fc" id="L192">                skippedPackages.add(forbiddenPackageName);</span>
+            }
+        }
+
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (skippedLines &gt; 0) {</span>
+<span class="nc" id="L197">            s.println(getSkippedPackagesMessage(skippedPackages, skippedLines));</span>
+        }
+<span class="fc" id="L199">    }</span>
+
+    // 37 lines skipped for [org.h2, org.hibernate, sun.,
+    // java.lang.reflect.Method, $Proxy]
+    private static String getSkippedPackagesMessage(Set&lt;String&gt; skippedPackages, int skippedLines) {
+
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        return INDENT + INDENT + skippedLines + &quot; line&quot; + (skippedLines == 1 ? &quot;&quot; : &quot;s&quot;) + &quot; skipped for &quot; + skippedPackages;</span>
+    }
+
+    private static Throwable getBottomThrowable(Throwable t) {
+
+<span class="fc" id="L210">        Throwable result = t;</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        while (result.getCause() != null) {</span>
+<span class="fc" id="L212">            result = result.getCause();</span>
+        }
+<span class="fc" id="L214">        return result;</span>
+    }
+
+    private static void printExceptionChain(Throwable t, PrintWriter s) {
+
+<span class="fc" id="L219">        s.println(t);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (t.getCause() != null) {</span>
+<span class="fc" id="L221">            s.print(&quot;Caused by: &quot;);</span>
+<span class="fc" id="L222">            printExceptionChain(t.getCause(), s);</span>
+        }
+<span class="fc" id="L224">    }</span>
+
+    /**
+     * Checks to see if the class is part of a forbidden package. If so, it returns the package name from the list of suppressed
+     * packages that matches, otherwise it returns null.
+     *
+     * @param traceElement StackTraceElement
+     * @return forbidden package name or null.
+     */
+    private static String tryGetForbiddenPackageName(StackTraceElement traceElement) {
+
+<span class="fc" id="L235">        String classAndMethod = traceElement.getClassName() + &quot;.&quot; + traceElement.getMethodName();</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        for (String pkg : suppressedPackages) {</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">            if (classAndMethod.startsWith(pkg)) {</span>
+<span class="fc" id="L238">                return pkg;</span>
+            }
+<span class="fc" id="L240">        }</span>
+<span class="fc" id="L241">        return null;</span>
+    }
+
+    private static void verboseLog(String message) {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (VERBOSE_LOGGING) {</span>
+<span class="nc" id="L246">            System.out.println(message);</span>
+        }
+<span class="fc" id="L248">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>HostnameConverter.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.log4j2</a> &gt; <span class="el_source">HostnameConverter.java</span></div><h1>HostnameConverter.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.log4j2;
+
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.pattern.ConverterKeys;
+import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
+
+import biz.paluch.logging.RuntimeContainer;
+
+/**
+ * Provides the servername/Hostname.
+ *
+ * &lt;table class=&quot;overviewSummary&quot; border=&quot;0&quot; cellpadding=&quot;3&quot; cellspacing=&quot;0&quot; style=&quot;border-bottom:1px solid #9eadc0;&quot; summary=&quot;Details for the %host formatter&quot;&gt;
+ * &lt;tbody&gt;
+ * &lt;tr&gt;
+ * &lt;th class=&quot;colFirst&quot;&gt;Option&lt;/th&gt;
+ * &lt;th class=&quot;colLast&quot;&gt;Description&lt;/th&gt;
+ * &lt;/tr&gt;
+ * &lt;tr class=&quot;altColor&quot;&gt;
+ * &lt;td class=&quot;colFirst&quot; align=&quot;center&quot;&gt;
+ * &lt;b&gt;host&lt;/b&gt;&lt;br&gt;
+ * &amp;nbsp;&amp;nbsp;{[&quot;fqdn&quot;&lt;br&gt;
+ * &amp;nbsp;&amp;nbsp;|&quot;simple&quot;&lt;br&gt;
+ * &amp;nbsp;&amp;nbsp;|&quot;address&quot;]}&lt;/td&gt;
+ * &lt;td class=&quot;colLast&quot;&gt;
+ * &lt;p&gt;
+ * Outputs either the FQDN hostname, the simple hostname or the local address.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * You can follow the throwable conversion word with an option in the form &lt;b&gt;%host{option}&lt;/b&gt;.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;b&gt;%host{fqdn}&lt;/b&gt; default setting, outputs the FQDN hostname, e.g. www.you.host.name.com.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;b&gt;%host{simple}&lt;/b&gt; outputs simple hostname, e.g. www.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;b&gt;%host{address}&lt;/b&gt; outputs the local IP address of the found hostname, e.g. 1.2.3.4 or affe:affe:affe::1.
+ * &lt;/p&gt;
+ * &lt;/td&gt;
+ * &lt;/tr&gt;
+ * &lt;/tbody&gt;
+ * &lt;/table&gt;
+ *
+ * @author Mark Paluch
+ */
+@Plugin(name = &quot;HostnameConverter&quot;, category = &quot;Converter&quot;)
+@ConverterKeys({ &quot;host&quot;, })
+public class HostnameConverter extends LogEventPatternConverter {
+
+    public HostnameConverter(String style) {
+<span class="fc" id="L53">        super(HostnameConverter.class.getSimpleName(), style);</span>
+<span class="fc" id="L54">    }</span>
+
+    public static HostnameConverter newInstance(String[] format) {
+<span class="fc" id="L57">        String style = null;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (format.length &gt; 0) {</span>
+<span class="fc" id="L59">            style = format[0];</span>
+        }
+<span class="fc" id="L61">        return new HostnameConverter(style);</span>
+    }
+
+    @Override
+    public void format(LogEvent event, StringBuilder toAppendTo) {
+<span class="pc bpc" id="L66" title="1 of 6 branches missed.">        if (getStyle() == null || getStyle().equals(&quot;&quot;) || getStyle().equals(&quot;fqdn&quot;)) {</span>
+<span class="fc" id="L67">            toAppendTo.append(RuntimeContainer.FQDN_HOSTNAME);</span>
+        }
+
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (getStyle() != null &amp;&amp; getStyle().equals(&quot;simple&quot;)) {</span>
+<span class="fc" id="L71">            toAppendTo.append(RuntimeContainer.HOSTNAME);</span>
+
+        }
+
+<span class="fc bfc" id="L75" title="All 4 branches covered.">        if (getStyle() != null &amp;&amp; getStyle().equals(&quot;address&quot;)) {</span>
+<span class="fc" id="L76">            toAppendTo.append(RuntimeContainer.ADDRESS);</span>
+        }
+<span class="fc" id="L78">    }</span>
+
+    public String getStyle() {
+<span class="fc" id="L81">        return getStyleClass(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
