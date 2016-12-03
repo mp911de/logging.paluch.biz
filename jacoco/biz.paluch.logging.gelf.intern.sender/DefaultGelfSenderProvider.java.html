@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DefaultGelfSenderProvider.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">DefaultGelfSenderProvider.java</span></div><h1>DefaultGelfSenderProvider.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DefaultGelfSenderProvider.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">DefaultGelfSenderProvider.java</span></div><h1>DefaultGelfSenderProvider.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,7 +51,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 <span class="fc" id="L51">            SocketFactory socketFactory = SocketFactory.getDefault();</span>
 
 <span class="fc" id="L53">            return new GelfTCPSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
-<span class="fc" id="L54">                    configuration.getErrorReporter());</span>
+                    configuration.getErrorReporter());
         }
     };
 
@@ -74,7 +74,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 
             try {
 <span class="nc" id="L76">                return new GelfTCPSSLSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
-<span class="nc" id="L77">                        configuration.getErrorReporter(), SSLContext.getDefault());</span>
+                        configuration.getErrorReporter(), SSLContext.getDefault());
 <span class="nc" id="L78">            } catch (NoSuchAlgorithmException e) {</span>
 <span class="nc" id="L79">                throw new IllegalStateException(e);</span>
             }
@@ -149,7 +149,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 
     }
 
-    private interface GelfSenderProducer {
+<span class="fc" id="L152">    private interface GelfSenderProducer {</span>
 
         /**
          * Produce a {@link GelfSender} using {@code configuration}, {@code host} and {@code port},

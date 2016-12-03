@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfLogbackAppender.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.logback</a> &gt; <span class="el_source">GelfLogbackAppender.java</span></div><h1>GelfLogbackAppender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.logback;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfLogbackAppender.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.logback</a> &gt; <span class="el_source">GelfLogbackAppender.java</span></div><h1>GelfLogbackAppender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.logback;
 
 import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.LoggerName;
 import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.Marker;
@@ -37,7 +37,7 @@ import ch.qos.logback.core.AppenderBase;
  * &lt;li&gt;port (Optional): Port, default 12201&lt;/li&gt;
  * &lt;li&gt;version (Optional): GELF Version 1.0 or 1.1, default 1.0&lt;/li&gt;
  * &lt;li&gt;originHost (Optional): Originating Hostname, default FQDN Hostname&lt;/li&gt;
- * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field, default false&lt;/li&gt;
+ * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 = throwable.cause, -1 = root cause]), default false&lt;/li&gt;
  * &lt;li&gt;filterStackTrace (Optional): Perform Stack-Trace filtering (true/false), default false&lt;/li&gt;
  * &lt;li&gt;mdcProfiling (Optional): Perform Profiling (Call-Duration) based on MDC Data. See &lt;a href=&quot;#mdcProfiling&quot;&gt;MDC
  * Profiling&lt;/a&gt;, default false&lt;/li&gt;
@@ -205,11 +205,11 @@ public class GelfLogbackAppender extends AppenderBase&lt;ILoggingEvent&gt; imple
 <span class="fc" id="L205">        gelfMessageAssembler.setFacility(facility);</span>
 <span class="fc" id="L206">    }</span>
 
-    public boolean isExtractStackTrace() {
-<span class="fc" id="L209">        return gelfMessageAssembler.isExtractStackTrace();</span>
+    public String getExtractStackTrace() {
+<span class="fc" id="L209">        return gelfMessageAssembler.getExtractStackTrace();</span>
     }
 
-    public void setExtractStackTrace(boolean extractStacktrace) {
+    public void setExtractStackTrace(String extractStacktrace) {
 <span class="fc" id="L213">        gelfMessageAssembler.setExtractStackTrace(extractStacktrace);</span>
 <span class="fc" id="L214">    }</span>
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfLogAppender.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.log4j2</a> &gt; <span class="el_source">GelfLogAppender.java</span></div><h1>GelfLogAppender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.log4j2;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfLogAppender.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.log4j2</a> &gt; <span class="el_source">GelfLogAppender.java</span></div><h1>GelfLogAppender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.log4j2;
 
 import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.*;
 import static org.apache.logging.log4j.core.layout.PatternLayout.newBuilder;
@@ -34,14 +34,17 @@ import biz.paluch.logging.gelf.intern.*;
  * &lt;li&gt;port (Optional): Port, default 12201&lt;/li&gt;
  * &lt;li&gt;version (Optional): GELF Version 1.0 or 1.1, default 1.0&lt;/li&gt;
  * &lt;li&gt;originHost (Optional): Originating Hostname, default FQDN Hostname&lt;/li&gt;
- * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field, default false&lt;/li&gt;
+ * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 = throwable.cause, -1 = root cause]), default false&lt;/li&gt;
  * &lt;li&gt;filterStackTrace (Optional): Perform Stack-Trace filtering (true/false), default false&lt;/li&gt;
  * &lt;li&gt;mdcProfiling (Optional): Perform Profiling (Call-Duration) based on MDC Data. See &lt;a href=&quot;#mdcProfiling&quot;&gt;MDC
  * Profiling&lt;/a&gt;, default false&lt;/li&gt;
  * &lt;li&gt;facility (Optional): Name of the Facility, default gelf-java&lt;/li&gt;
  * &lt;li&gt;additionalFieldTypes (Optional): Type specification for additional and MDC fields. Supported types: String, long, Long,
- * double, Double and discover (default if not specified, discover field type on parseability). Eg. field=String,field2=double&lt;/li&gt;
- * &lt;li&gt;ignoreExceptions (Optional): The default is &lt;code&gt;true&lt;/code&gt;, causing exceptions encountered while appending events to be internally logged and then ignored. When set to &lt;code&gt;false&lt;/code&gt; exceptions will be propagated to the caller, instead. You must set this to false when wrapping this Appender in a &lt;code&gt;FailoverAppender&lt;/code&gt;.&lt;/li&gt;
+ * double, Double and discover (default if not specified, discover field type on parseability). Eg.
+ * field=String,field2=double&lt;/li&gt;
+ * &lt;li&gt;ignoreExceptions (Optional): The default is &lt;code&gt;true&lt;/code&gt;, causing exceptions encountered while appending events to
+ * be internally logged and then ignored. When set to &lt;code&gt;false&lt;/code&gt; exceptions will be propagated to the caller, instead.
+ * You must set this to false when wrapping this Appender in a &lt;code&gt;FailoverAppender&lt;/code&gt;.&lt;/li&gt;
  * &lt;/ul&gt;
  *
  * &lt;h2&gt;Fields&lt;/h2&gt;
@@ -105,15 +108,15 @@ import biz.paluch.logging.gelf.intern.*;
  * Additionally, you can add the &lt;strong&gt;host&lt;/strong&gt;-Field, which can supply you either the FQDN hostname, the simple hostname
  * or the local address.
  * &lt;/p&gt;
- * &lt;table class=&quot;overviewSummary&quot; border=&quot;0&quot; cellpadding=&quot;3&quot; cellspacing=&quot;0&quot; style=&quot;border-bottom:1px solid #9eadc0;&quot; summary=&quot;Details for the %host formatter&quot;&gt;
+ * &lt;table class=&quot;overviewSummary&quot; border=&quot;0&quot; cellpadding=&quot;3&quot; cellspacing=&quot;0&quot; style=&quot;border-bottom:1px solid #9eadc0;&quot; summary=
+ * &quot;Details for the %host formatter&quot;&gt;
  * &lt;tbody&gt;
  * &lt;tr&gt;
  * &lt;th class=&quot;colFirst&quot;&gt;Option&lt;/th&gt;
  * &lt;th class=&quot;colLast&quot;&gt;Description&lt;/th&gt;
  * &lt;/tr&gt;
  * &lt;tr class=&quot;altColor&quot;&gt;
- * &lt;td class=&quot;colFirst&quot; align=&quot;center&quot;&gt;
- * &lt;b&gt;host&lt;/b&gt; &amp;nbsp;&amp;nbsp;{[&quot;fqdn&quot;&lt;br&gt;
+ * &lt;td class=&quot;colFirst&quot; align=&quot;center&quot;&gt;&lt;b&gt;host&lt;/b&gt; &amp;nbsp;&amp;nbsp;{[&quot;fqdn&quot;&lt;br&gt;
  * &amp;nbsp;&amp;nbsp;|&quot;simple&quot;&lt;br&gt;
  * &amp;nbsp;&amp;nbsp;|&quot;address&quot;]}&lt;/td&gt;
  * &lt;td class=&quot;colLast&quot;&gt;
@@ -138,7 +141,8 @@ import biz.paluch.logging.gelf.intern.*;
  * &lt;/table&gt;
  *
  *
- * &lt;a name=&quot;mdcProfiling&quot;&gt;&lt;/a&gt; &lt;h2&gt;MDC Profiling&lt;/h2&gt;
+ * &lt;a name=&quot;mdcProfiling&quot;&gt;&lt;/a&gt;
+ * &lt;h2&gt;MDC Profiling&lt;/h2&gt;
  * &lt;p&gt;
  * MDC Profiling allows to calculate the runtime from request start up to the time until the log message was generated. You must
  * set one value in the MDC:
@@ -158,24 +162,24 @@ import biz.paluch.logging.gelf.intern.*;
 @Plugin(name = &quot;Gelf&quot;, category = &quot;Core&quot;, elementType = &quot;appender&quot;, printObject = true)
 public class GelfLogAppender extends AbstractAppender {
 
-<span class="fc" id="L161">    private static final Logger LOGGER = StatusLogger.getLogger();</span>
-<span class="fc" id="L162">    private static final ErrorReporter ERROR_REPORTER = new ErrorReporter() {</span>
+<span class="fc" id="L165">    private static final Logger LOGGER = StatusLogger.getLogger();</span>
+<span class="fc" id="L166">    private static final ErrorReporter ERROR_REPORTER = new ErrorReporter() {</span>
         @Override
         public void reportError(String message, Exception e) {
-<span class="fc" id="L165">            LOGGER.error(message, e, 0);</span>
-<span class="fc" id="L166">        }</span>
+<span class="fc" id="L169">            LOGGER.error(message, e, 0);</span>
+<span class="fc" id="L170">        }</span>
     };
 
-<span class="fc" id="L169">    private final ErrorReporter PROPAGATING_ERROR_REPORTER = new ErrorReporter() {</span>
+<span class="fc" id="L173">    private final ErrorReporter PROPAGATING_ERROR_REPORTER = new ErrorReporter() {</span>
         @Override
         public void reportError(String message, Exception e) {
 
-<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            if (e != null) {</span>
-<span class="fc" id="L174">                throw new AppenderLoggingException(e);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">            if (e != null) {</span>
+<span class="fc" id="L178">                throw new AppenderLoggingException(e);</span>
             }
 
-<span class="nc" id="L177">            LOGGER.error(message, null, 0);</span>
-<span class="nc" id="L178">        }</span>
+<span class="nc" id="L181">            LOGGER.error(message, null, 0);</span>
+<span class="nc" id="L182">        }</span>
     };
 
     protected GelfSender gelfSender;
@@ -184,15 +188,15 @@ public class GelfLogAppender extends AbstractAppender {
 
     public GelfLogAppender(String name, Filter filter, MdcGelfMessageAssembler gelfMessageAssembler, boolean ignoreExceptions) {
 
-<span class="fc" id="L187">        super(name, filter, null, ignoreExceptions);</span>
-<span class="fc" id="L188">        this.gelfMessageAssembler = gelfMessageAssembler;</span>
+<span class="fc" id="L191">        super(name, filter, null, ignoreExceptions);</span>
+<span class="fc" id="L192">        this.gelfMessageAssembler = gelfMessageAssembler;</span>
 
-<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (ignoreExceptions) {</span>
-<span class="fc" id="L191">            errorReporter = ERROR_REPORTER;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (ignoreExceptions) {</span>
+<span class="fc" id="L195">            errorReporter = ERROR_REPORTER;</span>
         } else {
-<span class="fc" id="L193">            errorReporter = PROPAGATING_ERROR_REPORTER;</span>
+<span class="fc" id="L197">            errorReporter = PROPAGATING_ERROR_REPORTER;</span>
         }
-<span class="fc" id="L195">    }</span>
+<span class="fc" id="L199">    }</span>
 
     @PluginFactory
     public static GelfLogAppender createAppender(@PluginConfiguration final Configuration config,
@@ -209,78 +213,78 @@ public class GelfLogAppender extends AbstractAppender {
             @PluginAttribute(&quot;additionalFieldTypes&quot;) String additionalFieldTypes,
             @PluginAttribute(value = &quot;ignoreExceptions&quot;, defaultBoolean = true) boolean ignoreExceptions) {
 
-<span class="fc" id="L212">        RuntimeContainer.initialize(ERROR_REPORTER);</span>
+<span class="fc" id="L216">        RuntimeContainer.initialize(ERROR_REPORTER);</span>
 
-<span class="fc" id="L214">        MdcGelfMessageAssembler mdcGelfMessageAssembler = new MdcGelfMessageAssembler();</span>
+<span class="fc" id="L218">        MdcGelfMessageAssembler mdcGelfMessageAssembler = new MdcGelfMessageAssembler();</span>
 
-<span class="fc bfc" id="L216" title="All 2 branches covered.">        if (name == null) {</span>
-<span class="fc" id="L217">            LOGGER.error(&quot;No name provided for &quot; + GelfLogAppender.class.getSimpleName());</span>
-<span class="fc" id="L218">            return null;</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (name == null) {</span>
+<span class="fc" id="L221">            LOGGER.error(&quot;No name provided for &quot; + GelfLogAppender.class.getSimpleName());</span>
+<span class="fc" id="L222">            return null;</span>
         }
 
-<span class="fc bfc" id="L221" title="All 4 branches covered.">        if (Strings.isEmpty(host) &amp;&amp; Strings.isEmpty(graylogHost)) {</span>
-<span class="fc" id="L222">            LOGGER.error(&quot;No host provided for &quot; + GelfLogAppender.class.getSimpleName());</span>
-<span class="fc" id="L223">            return null;</span>
+<span class="fc bfc" id="L225" title="All 4 branches covered.">        if (Strings.isEmpty(host) &amp;&amp; Strings.isEmpty(graylogHost)) {</span>
+<span class="fc" id="L226">            LOGGER.error(&quot;No host provided for &quot; + GelfLogAppender.class.getSimpleName());</span>
+<span class="fc" id="L227">            return null;</span>
         }
 
-<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (Strings.isNotEmpty(host)) {</span>
-<span class="fc" id="L227">            mdcGelfMessageAssembler.setHost(host);</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        if (Strings.isNotEmpty(host)) {</span>
+<span class="fc" id="L231">            mdcGelfMessageAssembler.setHost(host);</span>
         }
 
-<span class="fc bfc" id="L230" title="All 2 branches covered.">        if (Strings.isNotEmpty(graylogHost)) {</span>
-<span class="fc" id="L231">            mdcGelfMessageAssembler.setHost(graylogHost);</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (Strings.isNotEmpty(graylogHost)) {</span>
+<span class="fc" id="L235">            mdcGelfMessageAssembler.setHost(graylogHost);</span>
         }
 
-<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        if (Strings.isNotEmpty(port)) {</span>
-<span class="nc" id="L235">            mdcGelfMessageAssembler.setPort(Integer.parseInt(port));</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        if (Strings.isNotEmpty(port)) {</span>
+<span class="nc" id="L239">            mdcGelfMessageAssembler.setPort(Integer.parseInt(port));</span>
         }
 
-<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (Strings.isNotEmpty(graylogPort)) {</span>
-<span class="fc" id="L239">            mdcGelfMessageAssembler.setPort(Integer.parseInt(graylogPort));</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (Strings.isNotEmpty(graylogPort)) {</span>
+<span class="fc" id="L243">            mdcGelfMessageAssembler.setPort(Integer.parseInt(graylogPort));</span>
         }
 
-<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (Strings.isNotEmpty(version)) {</span>
-<span class="fc" id="L243">            mdcGelfMessageAssembler.setVersion(version);</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (Strings.isNotEmpty(version)) {</span>
+<span class="fc" id="L247">            mdcGelfMessageAssembler.setVersion(version);</span>
         }
 
-<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (Strings.isNotEmpty(originHost)) {</span>
-<span class="fc" id="L247">            PatternLayout patternLayout = newBuilder().withPattern(originHost).withConfiguration(config)</span>
-<span class="fc" id="L248">                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (Strings.isNotEmpty(originHost)) {</span>
+<span class="fc" id="L251">            PatternLayout patternLayout = newBuilder().withPattern(originHost).withConfiguration(config)</span>
+                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();
 
-<span class="fc" id="L250">            mdcGelfMessageAssembler.setOriginHost(patternLayout.toSerializable(new Log4jLogEvent()));</span>
+<span class="fc" id="L254">            mdcGelfMessageAssembler.setOriginHost(patternLayout.toSerializable(new Log4jLogEvent()));</span>
         }
 
-<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (facility != null) {</span>
-<span class="fc" id="L254">            mdcGelfMessageAssembler.setFacility(facility);</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">        if (facility != null) {</span>
+<span class="fc" id="L258">            mdcGelfMessageAssembler.setFacility(facility);</span>
         }
 
-<span class="fc bfc" id="L257" title="All 2 branches covered.">        if (extractStackTrace != null) {</span>
-<span class="fc" id="L258">            mdcGelfMessageAssembler.setExtractStackTrace(&quot;true&quot;.equals(extractStackTrace));</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (extractStackTrace != null) {</span>
+<span class="fc" id="L262">            mdcGelfMessageAssembler.setExtractStackTrace(extractStackTrace);</span>
         }
 
-<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (filterStackTrace != null) {</span>
-<span class="fc" id="L262">            mdcGelfMessageAssembler.setFilterStackTrace(&quot;true&quot;.equals(filterStackTrace));</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (filterStackTrace != null) {</span>
+<span class="fc" id="L266">            mdcGelfMessageAssembler.setFilterStackTrace(&quot;true&quot;.equals(filterStackTrace));</span>
         }
 
-<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (mdcProfiling != null) {</span>
-<span class="fc" id="L266">            mdcGelfMessageAssembler.setMdcProfiling(&quot;true&quot;.equals(mdcProfiling));</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (mdcProfiling != null) {</span>
+<span class="fc" id="L270">            mdcGelfMessageAssembler.setMdcProfiling(&quot;true&quot;.equals(mdcProfiling));</span>
         }
 
-<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (includeFullMdc != null) {</span>
-<span class="fc" id="L270">            mdcGelfMessageAssembler.setIncludeFullMdc(&quot;true&quot;.equals(includeFullMdc));</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">        if (includeFullMdc != null) {</span>
+<span class="fc" id="L274">            mdcGelfMessageAssembler.setIncludeFullMdc(&quot;true&quot;.equals(includeFullMdc));</span>
         }
 
-<span class="fc bfc" id="L273" title="All 2 branches covered.">        if (maximumMessageSize != null) {</span>
-<span class="fc" id="L274">            mdcGelfMessageAssembler.setMaximumMessageSize(Integer.parseInt(maximumMessageSize));</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (maximumMessageSize != null) {</span>
+<span class="fc" id="L278">            mdcGelfMessageAssembler.setMaximumMessageSize(Integer.parseInt(maximumMessageSize));</span>
         }
 
-<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (additionalFieldTypes != null) {</span>
-<span class="fc" id="L278">            ConfigurationSupport.setAdditionalFieldTypes(additionalFieldTypes, mdcGelfMessageAssembler);</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (additionalFieldTypes != null) {</span>
+<span class="fc" id="L282">            ConfigurationSupport.setAdditionalFieldTypes(additionalFieldTypes, mdcGelfMessageAssembler);</span>
         }
 
-<span class="fc" id="L281">        configureFields(mdcGelfMessageAssembler, fields, dynamicFieldArray);</span>
+<span class="fc" id="L285">        configureFields(mdcGelfMessageAssembler, fields, dynamicFieldArray);</span>
 
-<span class="fc" id="L283">        return new GelfLogAppender(name, filter, mdcGelfMessageAssembler, ignoreExceptions);</span>
+<span class="fc" id="L287">        return new GelfLogAppender(name, filter, mdcGelfMessageAssembler, ignoreExceptions);</span>
     }
 
     /**
@@ -293,85 +297,85 @@ public class GelfLogAppender extends AbstractAppender {
     private static void configureFields(MdcGelfMessageAssembler mdcGelfMessageAssembler, GelfLogField[] fields,
             GelfDynamicMdcLogFields[] dynamicFieldArray) {
 
-<span class="fc bfc" id="L296" title="All 4 branches covered.">    	if (fields == null || fields.length == 0) {</span>
-<span class="fc" id="L297">            mdcGelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(Time, Severity, ThreadName, SourceClassName,</span>
+<span class="fc bfc" id="L300" title="All 4 branches covered.">    	if (fields == null || fields.length == 0) {</span>
+<span class="fc" id="L301">            mdcGelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(Time, Severity, ThreadName, SourceClassName,</span>
                     SourceMethodName, SourceLineNumber, SourceSimpleClassName, LoggerName, Marker));
-<span class="fc" id="L299">            return;</span>
+<span class="fc" id="L303">            return;</span>
         }
 
-<span class="fc bfc" id="L302" title="All 2 branches covered.">        for (GelfLogField field : fields) {</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        for (GelfLogField field : fields) {</span>
 
-<span class="fc bfc" id="L304" title="All 2 branches covered.">            if (Strings.isNotEmpty(field.getMdc())) {</span>
-<span class="fc" id="L305">                mdcGelfMessageAssembler.addField(new MdcMessageField(field.getName(), field.getMdc()));</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (Strings.isNotEmpty(field.getMdc())) {</span>
+<span class="fc" id="L309">                mdcGelfMessageAssembler.addField(new MdcMessageField(field.getName(), field.getMdc()));</span>
             }
 
-<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (Strings.isNotEmpty(field.getLiteral())) {</span>
-<span class="fc" id="L309">                mdcGelfMessageAssembler.addField(new StaticMessageField(field.getName(), field.getLiteral()));</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">            if (Strings.isNotEmpty(field.getLiteral())) {</span>
+<span class="fc" id="L313">                mdcGelfMessageAssembler.addField(new StaticMessageField(field.getName(), field.getLiteral()));</span>
             }
 
-<span class="fc bfc" id="L312" title="All 2 branches covered.">            if (field.getPatternLayout() != null) {</span>
-<span class="fc" id="L313">                mdcGelfMessageAssembler.addField(new PatternLogMessageField(field.getName(), null, field.getPatternLayout()));</span>
-            }
-        }
-
-<span class="pc bpc" id="L317" title="1 of 2 branches missed.">        if (dynamicFieldArray != null) {</span>
-<span class="fc bfc" id="L318" title="All 2 branches covered.">            for (GelfDynamicMdcLogFields gelfDynamicMdcLogFields : dynamicFieldArray) {</span>
-<span class="fc" id="L319">                mdcGelfMessageAssembler.addField(new DynamicMdcMessageField(gelfDynamicMdcLogFields.getRegex()));</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">            if (field.getPatternLayout() != null) {</span>
+<span class="fc" id="L317">                mdcGelfMessageAssembler.addField(new PatternLogMessageField(field.getName(), null, field.getPatternLayout()));</span>
             }
         }
-<span class="fc" id="L322">    }</span>
+
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">        if (dynamicFieldArray != null) {</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">            for (GelfDynamicMdcLogFields gelfDynamicMdcLogFields : dynamicFieldArray) {</span>
+<span class="fc" id="L323">                mdcGelfMessageAssembler.addField(new DynamicMdcMessageField(gelfDynamicMdcLogFields.getRegex()));</span>
+            }
+        }
+<span class="fc" id="L326">    }</span>
 
     @Override
     public void append(LogEvent event) {
-        
-<span class="pc bpc" id="L327" title="1 of 2 branches missed.">    	if (event == null) {</span>
-<span class="nc" id="L328">            return;</span>
+
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">    	if (event == null) {</span>
+<span class="nc" id="L332">            return;</span>
         }
 
         try {
-<span class="fc" id="L332">            GelfMessage message = createGelfMessage(event);</span>
-<span class="fc bfc" id="L333" title="All 2 branches covered.">            if (!message.isValid()) {</span>
-<span class="fc" id="L334">                reportError(&quot;GELF Message is invalid: &quot; + message.toJson(), null);</span>
-<span class="fc" id="L335">                return;</span>
+<span class="fc" id="L336">            GelfMessage message = createGelfMessage(event);</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">            if (!message.isValid()) {</span>
+<span class="fc" id="L338">                reportError(&quot;GELF Message is invalid: &quot; + message.toJson(), null);</span>
+<span class="fc" id="L339">                return;</span>
             }
 
-<span class="pc bpc" id="L338" title="1 of 4 branches missed.">            if (null == gelfSender || !gelfSender.sendMessage(message)) {</span>
-<span class="fc" id="L339">                reportError(&quot;Could not send GELF message&quot;, null);</span>
+<span class="pc bpc" id="L342" title="1 of 4 branches missed.">            if (null == gelfSender || !gelfSender.sendMessage(message)) {</span>
+<span class="fc" id="L343">                reportError(&quot;Could not send GELF message&quot;, null);</span>
             }
-<span class="fc" id="L341">        } catch (AppenderLoggingException e) {</span>
-<span class="fc" id="L342">            throw e;</span>
-<span class="nc" id="L343">        } catch (Exception e) {</span>
-<span class="nc" id="L344">            reportError(&quot;Could not send GELF message: &quot; + e.getMessage(), e);</span>
-<span class="fc" id="L345">        }</span>
-<span class="fc" id="L346">    }</span>
+<span class="fc" id="L345">        } catch (AppenderLoggingException e) {</span>
+<span class="fc" id="L346">            throw e;</span>
+<span class="nc" id="L347">        } catch (Exception e) {</span>
+<span class="nc" id="L348">            reportError(&quot;Could not send GELF message: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L349">        }</span>
+<span class="fc" id="L350">    }</span>
 
     protected GelfMessage createGelfMessage(final LogEvent logEvent) {
-<span class="fc" id="L349">        return gelfMessageAssembler.createGelfMessage(new Log4j2LogEvent(logEvent));</span>
+<span class="fc" id="L353">        return gelfMessageAssembler.createGelfMessage(new Log4j2LogEvent(logEvent));</span>
     }
 
     public void reportError(String message, Exception exception) {
-<span class="fc" id="L353">        errorReporter.reportError(message, exception);</span>
-<span class="fc" id="L354">    }</span>
+<span class="fc" id="L357">        errorReporter.reportError(message, exception);</span>
+<span class="fc" id="L358">    }</span>
 
     @Override
     public void stop() {
-<span class="pc bpc" id="L358" title="1 of 2 branches missed.">        if (null != gelfSender) {</span>
-<span class="fc" id="L359">            Closer.close(gelfSender);</span>
-<span class="fc" id="L360">            gelfSender = null;</span>
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">        if (null != gelfSender) {</span>
+<span class="fc" id="L363">            Closer.close(gelfSender);</span>
+<span class="fc" id="L364">            gelfSender = null;</span>
         }
-<span class="fc" id="L362">        super.stop();</span>
-<span class="fc" id="L363">    }</span>
+<span class="fc" id="L366">        super.stop();</span>
+<span class="fc" id="L367">    }</span>
 
     @Override
     public void start() {
-<span class="pc bpc" id="L367" title="1 of 2 branches missed.">        if (null == gelfSender) {</span>
-<span class="fc" id="L368">            gelfSender = createGelfSender();</span>
+<span class="pc bpc" id="L371" title="1 of 2 branches missed.">        if (null == gelfSender) {</span>
+<span class="fc" id="L372">            gelfSender = createGelfSender();</span>
         }
-<span class="fc" id="L370">        super.start();</span>
-<span class="fc" id="L371">    }</span>
+<span class="fc" id="L374">        super.start();</span>
+<span class="fc" id="L375">    }</span>
 
     protected GelfSender createGelfSender() {
-<span class="fc" id="L374">        return GelfSenderFactory.createSender(gelfMessageAssembler, errorReporter, Collections.EMPTY_MAP);</span>
+<span class="fc" id="L378">        return GelfSenderFactory.createSender(gelfMessageAssembler, errorReporter, Collections.EMPTY_MAP);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
