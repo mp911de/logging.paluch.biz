@@ -51,7 +51,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 <span class="fc" id="L51">            SocketFactory socketFactory = SocketFactory.getDefault();</span>
 
 <span class="fc" id="L53">            return new GelfTCPSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
-                    configuration.getErrorReporter());
+<span class="fc" id="L54">                    configuration.getErrorReporter());</span>
         }
     };
 
@@ -74,7 +74,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 
             try {
 <span class="nc" id="L76">                return new GelfTCPSSLSender(tcpGraylogHost, port, connectionTimeMs, readTimeMs, deliveryAttempts, keepAlive,</span>
-                        configuration.getErrorReporter(), SSLContext.getDefault());
+<span class="nc" id="L77">                        configuration.getErrorReporter(), SSLContext.getDefault());</span>
 <span class="nc" id="L78">            } catch (NoSuchAlgorithmException e) {</span>
 <span class="nc" id="L79">                throw new IllegalStateException(e);</span>
             }
@@ -96,7 +96,7 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 
         @Override
         public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
-<span class="fc" id="L99">            return new GelfUDPSender(host, port, configuration.getErrorReporter());</span>
+<span class="nc" id="L99">            return new GelfUDPSender(host, port, configuration.getErrorReporter());</span>
         }
     };
 
@@ -105,10 +105,10 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
         @Override
         public GelfSender create(GelfSenderConfiguration configuration, String host, int port) throws IOException {
 
-<span class="fc" id="L108">            int defaultTimeoutMs = (int) TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS);</span>
-<span class="fc" id="L109">            URL url = new URL(host);</span>
+<span class="nc" id="L108">            int defaultTimeoutMs = (int) TimeUnit.MILLISECONDS.convert(2, TimeUnit.SECONDS);</span>
+<span class="nc" id="L109">            URL url = new URL(host);</span>
 
-<span class="fc" id="L111">            return new GelfHTTPSender(url, defaultTimeoutMs, defaultTimeoutMs, configuration.getErrorReporter());</span>
+<span class="nc" id="L111">            return new GelfHTTPSender(url, defaultTimeoutMs, defaultTimeoutMs, configuration.getErrorReporter());</span>
         }
     };
 
@@ -139,13 +139,13 @@ import biz.paluch.logging.gelf.intern.GelfSenderProvider;
 <span class="fc" id="L139">            port = DEFAULT_PORT;</span>
         }
 
-<span class="fc bfc" id="L142" title="All 2 branches covered.">        for (Map.Entry&lt;String, GelfSenderProducer&gt; entry : factories.entrySet()) {</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        for (Map.Entry&lt;String, GelfSenderProducer&gt; entry : factories.entrySet()) {</span>
 <span class="fc bfc" id="L143" title="All 2 branches covered.">            if (graylogHost.startsWith(entry.getKey())) {</span>
 <span class="fc" id="L144">                return entry.getValue().create(configuration, graylogHost, port);</span>
             }
 <span class="fc" id="L146">        }</span>
 
-<span class="fc" id="L148">        return defaultSenderFactory.create(configuration, graylogHost, port);</span>
+<span class="nc" id="L148">        return defaultSenderFactory.create(configuration, graylogHost, port);</span>
 
     }
 

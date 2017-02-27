@@ -375,7 +375,7 @@ public class StackTraceFilter {
         }
 
 <span class="fc bfc" id="L377" title="All 2 branches covered.">        stringBuilder.append(skippedLines).append(&quot; line&quot;).append((skippedLines == 1 ? &quot;&quot; : &quot;s&quot;)).append(&quot; skipped for &quot;)</span>
-                .append(skippedPackages);
+<span class="fc" id="L378">                .append(skippedPackages);</span>
 
 <span class="fc" id="L380">        return stringBuilder.toString();</span>
     }
@@ -412,90 +412,89 @@ public class StackTraceFilter {
 <span class="fc" id="L412">        boolean first = true;</span>
         int indentationLevel;
 
-<span class="fc" id="L415">        private final String lineSeparator = java.security.AccessController</span>
-                .doPrivileged(new sun.security.action.GetPropertyAction(&quot;line.separator&quot;));
+<span class="fc" id="L415">        private final String lineSeparator = System.getProperty(&quot;line.separator&quot;);</span>
 
         public StackTraceFilterWriter(Writer s) {
-<span class="fc" id="L419">            super(s);</span>
-<span class="fc" id="L420">        }</span>
+<span class="fc" id="L418">            super(s);</span>
+<span class="fc" id="L419">        }</span>
 
         @Override
         public void write(String str, int off, int len) throws IOException {
 
-<span class="fc" id="L425">            String toWrite = str.substring(off, len);</span>
+<span class="fc" id="L424">            String toWrite = str.substring(off, len);</span>
 
-<span class="pc bpc" id="L427" title="1 of 6 branches missed.">            if (skippedLines &gt; 0 &amp;&amp; toWrite.equals(lineSeparator) &amp;&amp; endsWithNewLine) {</span>
-<span class="fc" id="L428">                return;</span>
+<span class="pc bpc" id="L426" title="1 of 6 branches missed.">            if (skippedLines &gt; 0 &amp;&amp; toWrite.equals(lineSeparator) &amp;&amp; endsWithNewLine) {</span>
+<span class="fc" id="L427">                return;</span>
             }
 
-<span class="fc bfc" id="L431" title="All 2 branches covered.">            if (toWrite.equals(lineSeparator)) {</span>
-<span class="fc" id="L432">                endsWithNewLine = true;</span>
-<span class="fc" id="L433">                super.write(str, off, len);</span>
-<span class="fc" id="L434">                return;</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">            if (toWrite.equals(lineSeparator)) {</span>
+<span class="fc" id="L431">                endsWithNewLine = true;</span>
+<span class="fc" id="L432">                super.write(str, off, len);</span>
+<span class="fc" id="L433">                return;</span>
             }
 
-<span class="fc bfc" id="L437" title="All 2 branches covered.">            if (SURPRESSED_PATTERN.matcher(toWrite).find()) {</span>
-<span class="fc" id="L438">                first = true;</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (SURPRESSED_PATTERN.matcher(toWrite).find()) {</span>
+<span class="fc" id="L437">                first = true;</span>
             }
 
-<span class="fc bfc" id="L441" title="All 4 branches covered.">            if (endsWithNewLine &amp;&amp; AT_PATTERN.matcher(toWrite).find()) {</span>
+<span class="fc bfc" id="L440" title="All 4 branches covered.">            if (endsWithNewLine &amp;&amp; AT_PATTERN.matcher(toWrite).find()) {</span>
 
-<span class="fc" id="L443">                String traceElement = getTraceElement(toWrite);</span>
+<span class="fc" id="L442">                String traceElement = getTraceElement(toWrite);</span>
 
-<span class="fc" id="L445">                String forbiddenPackageName = null;</span>
+<span class="fc" id="L444">                String forbiddenPackageName = null;</span>
 
-<span class="fc bfc" id="L447" title="All 2 branches covered.">                if (!first) {</span>
-<span class="fc" id="L448">                    forbiddenPackageName = tryGetForbiddenPackageName(traceElement);</span>
+<span class="fc bfc" id="L446" title="All 2 branches covered.">                if (!first) {</span>
+<span class="fc" id="L447">                    forbiddenPackageName = tryGetForbiddenPackageName(traceElement);</span>
                 }
 
-<span class="fc" id="L451">                first = false;</span>
+<span class="fc" id="L450">                first = false;</span>
 
-<span class="fc bfc" id="L453" title="All 2 branches covered.">                if (forbiddenPackageName == null) {</span>
-<span class="fc" id="L454">                    afterFiltering();</span>
-<span class="fc" id="L455">                    super.write(str, off, len);</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">                if (forbiddenPackageName == null) {</span>
+<span class="fc" id="L453">                    afterFiltering();</span>
+<span class="fc" id="L454">                    super.write(str, off, len);</span>
                 } else {
 
-<span class="fc" id="L458">                    indentationLevel = getIndentation(toWrite);</span>
-<span class="fc" id="L459">                    skippedLines++;</span>
-<span class="fc" id="L460">                    skippedPackages.add(forbiddenPackageName);</span>
+<span class="fc" id="L457">                    indentationLevel = getIndentation(toWrite);</span>
+<span class="fc" id="L458">                    skippedLines++;</span>
+<span class="fc" id="L459">                    skippedPackages.add(forbiddenPackageName);</span>
                 }
-<span class="fc" id="L462">                return;</span>
+<span class="fc" id="L461">                return;</span>
             }
 
-<span class="fc" id="L465">            afterFiltering();</span>
+<span class="fc" id="L464">            afterFiltering();</span>
 
-<span class="fc" id="L467">            super.write(str, off, len);</span>
-<span class="fc" id="L468">            endsWithNewLine = str.equals(lineSeparator);</span>
-<span class="fc" id="L469">        }</span>
+<span class="fc" id="L466">            super.write(str, off, len);</span>
+<span class="fc" id="L467">            endsWithNewLine = str.equals(lineSeparator);</span>
+<span class="fc" id="L468">        }</span>
 
         private void afterFiltering() throws IOException {
 
-<span class="fc bfc" id="L473" title="All 2 branches covered.">            if (!skippedPackages.isEmpty()) {</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">            if (!skippedPackages.isEmpty()) {</span>
                 // 37 lines skipped for [org.h2, org.hibernate, sun.,
                 // java.lang.reflect.Method, $Proxy]
-<span class="fc" id="L476">                String skippedPackagesMessage = getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel);</span>
+<span class="fc" id="L475">                String skippedPackagesMessage = getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel);</span>
 
-<span class="fc" id="L478">                skippedPackages.clear();</span>
-<span class="fc" id="L479">                skippedLines = 0;</span>
-<span class="fc" id="L480">                write(skippedPackagesMessage);</span>
-<span class="fc" id="L481">                write(lineSeparator);</span>
+<span class="fc" id="L477">                skippedPackages.clear();</span>
+<span class="fc" id="L478">                skippedLines = 0;</span>
+<span class="fc" id="L479">                write(skippedPackagesMessage);</span>
+<span class="fc" id="L480">                write(lineSeparator);</span>
 
                 // at hib.HibExample.test(HibExample.java:18)
-<span class="fc" id="L484">                indentationLevel = 0;</span>
+<span class="fc" id="L483">                indentationLevel = 0;</span>
             }
-<span class="fc" id="L486">        }</span>
+<span class="fc" id="L485">        }</span>
 
         private String getTraceElement(String toWrite) {
-<span class="fc" id="L489">            return toWrite.substring(toWrite.indexOf(traceElementPrefix) + traceElementPrefix.length());</span>
+<span class="fc" id="L488">            return toWrite.substring(toWrite.indexOf(traceElementPrefix) + traceElementPrefix.length());</span>
         }
 
         @Override
         public void close() throws IOException {
-<span class="nc bnc" id="L494" title="All 2 branches missed.">            if (skippedLines &gt; 0) {</span>
-<span class="nc" id="L495">                write(getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel));</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">            if (skippedLines &gt; 0) {</span>
+<span class="nc" id="L494">                write(getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel));</span>
             }
-<span class="nc" id="L497">            super.close();</span>
-<span class="nc" id="L498">        }</span>
+<span class="nc" id="L496">            super.close();</span>
+<span class="nc" id="L497">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

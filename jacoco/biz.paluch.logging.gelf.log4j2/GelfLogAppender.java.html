@@ -249,7 +249,7 @@ public class GelfLogAppender extends AbstractAppender {
 
 <span class="fc bfc" id="L250" title="All 2 branches covered.">        if (Strings.isNotEmpty(originHost)) {</span>
 <span class="fc" id="L251">            PatternLayout patternLayout = newBuilder().withPattern(originHost).withConfiguration(config)</span>
-                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();
+<span class="fc" id="L252">                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();</span>
 
 <span class="fc" id="L254">            mdcGelfMessageAssembler.setOriginHost(patternLayout.toSerializable(new Log4jLogEvent()));</span>
         }

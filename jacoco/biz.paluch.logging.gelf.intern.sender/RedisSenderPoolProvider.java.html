@@ -43,7 +43,7 @@ import redis.clients.util.Pool;
         public synchronized Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort, int timeoutMs) {
 <span class="nc" id="L44">            String lowerCasedConnectionString = hostURI.toString().toLowerCase();</span>
 <span class="nc" id="L45">            String cleanConnectionString = lowerCasedConnectionString.substring(0, lowerCasedConnectionString.length()</span>
-                    - hostURI.getFragment().length());
+<span class="nc" id="L46">                    - hostURI.getFragment().length());</span>
 
 <span class="nc bnc" id="L48" title="All 2 branches missed.">            if (!standalonePools.containsKey(cleanConnectionString)) {</span>
 
@@ -82,7 +82,7 @@ import redis.clients.util.Pool;
         public Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort, int timeoutMs) {
 <span class="nc" id="L83">            String lowerCasedConnectionString = hostURI.toString().toLowerCase();</span>
 <span class="nc" id="L84">            String cleanConnectionString = lowerCasedConnectionString.substring(0, lowerCasedConnectionString.length()</span>
-                    - hostURI.getFragment().length());
+<span class="nc" id="L85">                    - hostURI.getFragment().length());</span>
 
 <span class="nc" id="L87">            Set&lt;String&gt; sentinels = getSentinels(hostURI);</span>
 <span class="nc" id="L88">            String masterName = getMasterName(hostURI);</span>

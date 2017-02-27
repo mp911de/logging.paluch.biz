@@ -383,7 +383,7 @@ public class GelfMessage {
     }
 
     public int getCurrentMillis() {
-<span class="fc" id="L386">        return (int) System.currentTimeMillis();</span>
+<span class="nc" id="L386">        return (int) System.currentTimeMillis();</span>
     }
 
     private byte[] gzipMessage(byte[] message) {
@@ -448,7 +448,7 @@ public class GelfMessage {
     }
 
     public String getTimestamp() {
-<span class="fc" id="L451">        return getTimestampAsBigDecimal().toPlainString();</span>
+<span class="nc" id="L451">        return getTimestampAsBigDecimal().toPlainString();</span>
     }
 
     public Long getJavaTimestamp() {

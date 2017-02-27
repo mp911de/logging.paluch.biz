@@ -69,7 +69,7 @@ public class GelfTCPSender extends AbstractNioSender&lt;SocketChannel&gt; implem
 <span class="fc" id="L69">        this.connectTimeoutMs = connectTimeoutMs;</span>
 <span class="fc" id="L70">        this.readTimeoutMs = readTimeoutMs;</span>
 <span class="fc" id="L71">        this.keepAlive = keepAlive;</span>
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        this.deliveryAttempts = deliveryAttempts &lt; 1 ? Integer.MAX_VALUE : deliveryAttempts;</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        this.deliveryAttempts = deliveryAttempts &lt; 1 ? Integer.MAX_VALUE : deliveryAttempts;</span>
 
 <span class="fc" id="L74">        this.setChannel(createSocketChannel(readTimeoutMs, keepAlive));</span>
 <span class="fc" id="L75">    }</span>
@@ -123,7 +123,7 @@ public class GelfTCPSender extends AbstractNioSender&lt;SocketChannel&gt; implem
 
 <span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (exception != null) {</span>
 <span class="fc" id="L125">            reportError(exception.getMessage(),</span>
-                    new IOException(&quot;Cannot send data to &quot; + getHost() + &quot;:&quot; + getPort(), exception));
+<span class="fc" id="L126">                    new IOException(&quot;Cannot send data to &quot; + getHost() + &quot;:&quot; + getPort(), exception));</span>
         }
 
 <span class="fc" id="L129">        return false;</span>
@@ -134,7 +134,7 @@ public class GelfTCPSender extends AbstractNioSender&lt;SocketChannel&gt; implem
 <span class="fc bfc" id="L134" title="All 2 branches covered.">        while (buffer.hasRemaining()) {</span>
 <span class="fc" id="L135">            int written = channel().write(buffer);</span>
 
-<span class="pc bpc" id="L137" title="1 of 2 branches missed.">            if (written &lt; 0) {</span>
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">            if (written &lt; 0 || !isConnected()) {</span>
                 // indicator the socket was closed
 <span class="nc" id="L139">                Closer.close(channel());</span>
 <span class="nc" id="L140">                throw new SocketException(&quot;Cannot write buffer to channel&quot;);</span>
@@ -148,45 +148,43 @@ public class GelfTCPSender extends AbstractNioSender&lt;SocketChannel&gt; implem
 <span class="nc" id="L148">            return false;</span>
         }
 
-<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (!channel().isOpen()) {</span>
-<span class="fc" id="L152">            Closer.close(channel());</span>
-<span class="fc" id="L153">            setChannel(createSocketChannel(readTimeoutMs, keepAlive));</span>
+<span class="fc" id="L151">        Closer.close(channel());</span>
+<span class="fc" id="L152">        setChannel(createSocketChannel(readTimeoutMs, keepAlive));</span>
+
+<span class="fc" id="L154">        InetSocketAddress inetSocketAddress = new InetSocketAddress(getHost(), getPort());</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (channel().connect(inetSocketAddress)) {</span>
+<span class="nc" id="L156">            return true;</span>
         }
 
-<span class="fc" id="L156">        InetSocketAddress inetSocketAddress = new InetSocketAddress(getHost(), getPort());</span>
-<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (channel().connect(inetSocketAddress)) {</span>
-<span class="nc" id="L158">            return true;</span>
-        }
-
-<span class="fc" id="L161">        long connectTimeoutLeft = TimeUnit.MILLISECONDS.toNanos(connectTimeoutMs);</span>
-<span class="fc" id="L162">        long waitTimeoutMs = 10;</span>
-<span class="fc" id="L163">        long waitTimeoutNs = TimeUnit.MILLISECONDS.toNanos(waitTimeoutMs);</span>
+<span class="fc" id="L159">        long connectTimeoutLeft = TimeUnit.MILLISECONDS.toNanos(connectTimeoutMs);</span>
+<span class="fc" id="L160">        long waitTimeoutMs = 10;</span>
+<span class="fc" id="L161">        long waitTimeoutNs = TimeUnit.MILLISECONDS.toNanos(waitTimeoutMs);</span>
         boolean connected;
         try {
-<span class="fc bfc" id="L166" title="All 2 branches covered.">            while (!(connected = channel().finishConnect())) {</span>
-<span class="fc" id="L167">                Thread.sleep(waitTimeoutMs);</span>
-<span class="fc" id="L168">                connectTimeoutLeft -= waitTimeoutNs;</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            while (!(connected = channel().finishConnect())) {</span>
+<span class="fc" id="L165">                Thread.sleep(waitTimeoutMs);</span>
+<span class="fc" id="L166">                connectTimeoutLeft -= waitTimeoutNs;</span>
 
-<span class="fc bfc" id="L170" title="All 2 branches covered.">                if (connectTimeoutLeft &lt;= 0) {</span>
-<span class="fc" id="L171">                    break;</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (connectTimeoutLeft &lt;= 0) {</span>
+<span class="fc" id="L169">                    break;</span>
                 }
             }
 
-<span class="fc bfc" id="L175" title="All 2 branches covered.">            if (!connected) {</span>
-<span class="fc" id="L176">                throw new ConnectException(&quot;Connection timed out. Cannot connect to &quot; + inetSocketAddress + &quot; within &quot;</span>
-                        + TimeUnit.NANOSECONDS.toMillis(connectTimeoutLeft) + &quot;ms&quot;);
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            if (!connected) {</span>
+<span class="fc" id="L174">                throw new ConnectException(&quot;Connection timed out. Cannot connect to &quot; + inetSocketAddress + &quot; within &quot;</span>
+<span class="fc" id="L175">                        + TimeUnit.NANOSECONDS.toMillis(connectTimeoutLeft) + &quot;ms&quot;);</span>
             }
 
-<span class="fc" id="L180">            return connected;</span>
-<span class="nc" id="L181">        } catch (InterruptedException e) {</span>
-<span class="nc" id="L182">            Thread.currentThread().interrupt();</span>
-<span class="nc" id="L183">            throw new IOException(&quot;Connection interrupted&quot;, e);</span>
+<span class="fc" id="L178">            return connected;</span>
+<span class="nc" id="L179">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L180">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L181">            throw new IOException(&quot;Connection interrupted&quot;, e);</span>
         }
     }
 
     @Override
     protected boolean isConnected(SocketChannel channel) {
-<span class="fc" id="L189">        return channel.isConnected();</span>
+<span class="fc" id="L187">        return channel.isConnected();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

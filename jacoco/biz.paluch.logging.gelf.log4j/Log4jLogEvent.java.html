@@ -196,7 +196,7 @@ class Log4jLogEvent implements LogEvent {
     private Set&lt;String&gt; getAllMdcNames() {
 <span class="fc" id="L197">        Set&lt;String&gt; mdcNames = new HashSet&lt;String&gt;();</span>
 <span class="fc" id="L198">        Map context = MDC.getContext();</span>
-<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (context != null) {</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (context != null) {</span>
 <span class="fc" id="L200">            mdcNames.addAll(context.keySet());</span>
         }
 <span class="fc" id="L202">        return mdcNames;</span>

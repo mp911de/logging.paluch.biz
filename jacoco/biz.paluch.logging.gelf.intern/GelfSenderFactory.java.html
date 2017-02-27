@@ -20,7 +20,7 @@ import biz.paluch.logging.gelf.intern.sender.RedisGelfSenderProvider;
  * @author Aleksandar Stojadinovic
  * @since 26.09.13 15:12
  */
-<span class="fc" id="L23">public final class GelfSenderFactory {</span>
+<span class="nc" id="L23">public final class GelfSenderFactory {</span>
 
     /**
      * Create a GelfSender based on the configuration.
@@ -106,7 +106,7 @@ import biz.paluch.logging.gelf.intern.sender.RedisGelfSenderProvider;
 <span class="fc" id="L106">    }</span>
 
     // For thread safe lazy intialization of provider list
-<span class="pc" id="L109">    private static class SenderProviderHolder {</span>
+<span class="nc" id="L109">    private static class SenderProviderHolder {</span>
 
 <span class="fc" id="L111">        private static ServiceLoader&lt;GelfSenderProvider&gt; gelfSenderProvider = ServiceLoader.load(GelfSenderProvider.class);</span>
 <span class="fc" id="L112">        private static List&lt;GelfSenderProvider&gt; providerList = new ArrayList&lt;GelfSenderProvider&gt;();</span>

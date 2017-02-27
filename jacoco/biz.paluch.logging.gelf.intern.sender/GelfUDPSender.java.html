@@ -63,7 +63,7 @@ public class GelfUDPSender extends AbstractNioSender&lt;DatagramChannel&gt; impl
 <span class="fc bfc" id="L63" title="All 2 branches covered.">                    while (buffer.hasRemaining()) {</span>
 <span class="fc" id="L64">                        channel().write(buffer);</span>
                     }
-<span class="pc" id="L66">                }</span>
+<span class="fc" id="L66">                }</span>
             }
 <span class="fc" id="L68">        } catch (IOException e) {</span>
 <span class="fc" id="L69">            reportError(e.getMessage(), new IOException(&quot;Cannot send data to &quot; + getHost() + &quot;:&quot; + getPort(), e));</span>

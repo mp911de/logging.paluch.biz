@@ -20,8 +20,8 @@ import redis.clients.util.Pool;
 
     @Override
     public boolean supports(String host) {
-<span class="pc bpc" id="L23" title="2 of 4 branches missed.">        return host.startsWith(RedisSenderConstants.REDIS_SCHEME + &quot;:&quot;)</span>
-                || host.startsWith(RedisSenderConstants.REDIS_SENTINEL_SCHEME + &quot;:&quot;);
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        return host.startsWith(RedisSenderConstants.REDIS_SCHEME + &quot;:&quot;)</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">                || host.startsWith(RedisSenderConstants.REDIS_SENTINEL_SCHEME + &quot;:&quot;);</span>
     }
 
     @Override

@@ -72,7 +72,7 @@ public class GelfLogField {
 <span class="fc bfc" id="L72" title="All 2 branches covered.">        if (isPattern) {</span>
 
 <span class="fc" id="L74">            PatternLayout patternLayout = newBuilder().withPattern(pattern).withConfiguration(config)</span>
-                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();
+<span class="fc" id="L75">                    .withNoConsoleNoAnsi(false).withAlwaysWriteExceptions(false).build();</span>
 
 <span class="fc" id="L77">            return new GelfLogField(name, null, null, patternLayout);</span>
         }

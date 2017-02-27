@@ -37,8 +37,8 @@ class PoolingGelfMessage extends GelfMessage {
         }
     };
 
-<span class="fc" id="L40">    public PoolingGelfMessage() {</span>
-<span class="fc" id="L41">    }</span>
+<span class="nc" id="L40">    public PoolingGelfMessage() {</span>
+<span class="nc" id="L41">    }</span>
 
     public PoolingGelfMessage(String shortMessage, String fullMessage, long timestamp, String level) {
 <span class="fc" id="L44">        super(shortMessage, fullMessage, timestamp, level);</span>
@@ -67,16 +67,16 @@ class PoolingGelfMessage extends GelfMessage {
 
         // calculate the length of the datagrams array
 
-<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (tempBuffer.position() &gt; getMaximumMessageSize()) {</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (tempBuffer.position() &gt; getMaximumMessageSize()) {</span>
 
-<span class="fc" id="L72">            int diagrams_length = tempBuffer.position() / getMaximumMessageSize();</span>
+<span class="nc" id="L72">            int diagrams_length = tempBuffer.position() / getMaximumMessageSize();</span>
             // In case of a remainder, due to the integer division, add a extra datagram
-<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (tempBuffer.position() % getMaximumMessageSize() != 0) {</span>
-<span class="fc" id="L75">                diagrams_length++;</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (tempBuffer.position() % getMaximumMessageSize() != 0) {</span>
+<span class="nc" id="L75">                diagrams_length++;</span>
             }
 
-<span class="fc" id="L78">            buffer.clear();</span>
-<span class="fc" id="L79">            return sliceDatagrams((ByteBuffer) tempBuffer.flip(), diagrams_length, buffer);</span>
+<span class="nc" id="L78">            buffer.clear();</span>
+<span class="nc" id="L79">            return sliceDatagrams((ByteBuffer) tempBuffer.flip(), diagrams_length, buffer);</span>
         } else {
 <span class="fc" id="L81">            ByteBuffer[] byteBuffers = SINGLE_BUFFER.get();</span>
 <span class="fc" id="L82">            byteBuffers[0] = (ByteBuffer) tempBuffer.flip();</span>
@@ -95,10 +95,10 @@ class PoolingGelfMessage extends GelfMessage {
 <span class="fc" id="L95">            byte[] bytes = BYTE_ARRAY_POOL.get();</span>
 <span class="fc bfc" id="L96" title="All 2 branches covered.">            while (size &gt; read) {</span>
 
-<span class="fc bfc" id="L98" title="All 2 branches covered.">                if ((size - read) &gt; bytes.length) {</span>
-<span class="fc" id="L99">                    read += bytes.length;</span>
-<span class="fc" id="L100">                    source.get(bytes);</span>
-<span class="fc" id="L101">                    gz.write(bytes);</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                if ((size - read) &gt; bytes.length) {</span>
+<span class="nc" id="L99">                    read += bytes.length;</span>
+<span class="nc" id="L100">                    source.get(bytes);</span>
+<span class="nc" id="L101">                    gz.write(bytes);</span>
                 } else {
 <span class="fc" id="L103">                    int remain = size - read;</span>
 <span class="fc" id="L104">                    read += remain;</span>

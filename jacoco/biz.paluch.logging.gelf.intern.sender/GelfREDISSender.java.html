@@ -21,25 +21,25 @@ public class GelfREDISSender&lt;T&gt; implements GelfSender {
     private final Pool&lt;Jedis&gt; jedisPool;
     private final ErrorReporter errorReporter;
     private final String redisKey;
-<span class="fc" id="L24">    private final Set&lt;Thread&gt; callers = Collections.newSetFromMap(new WeakHashMap&lt;Thread, Boolean&gt;());</span>
+<span class="nc" id="L24">    private final Set&lt;Thread&gt; callers = Collections.newSetFromMap(new WeakHashMap&lt;Thread, Boolean&gt;());</span>
 
-<span class="fc" id="L26">    public GelfREDISSender(Pool&lt;Jedis&gt; jedisPool, String redisKey, ErrorReporter errorReporter) throws IOException {</span>
-<span class="fc" id="L27">        this.jedisPool = jedisPool;</span>
-<span class="fc" id="L28">        this.errorReporter = errorReporter;</span>
-<span class="fc" id="L29">        this.redisKey = redisKey;</span>
-<span class="fc" id="L30">    }</span>
+<span class="nc" id="L26">    public GelfREDISSender(Pool&lt;Jedis&gt; jedisPool, String redisKey, ErrorReporter errorReporter) throws IOException {</span>
+<span class="nc" id="L27">        this.jedisPool = jedisPool;</span>
+<span class="nc" id="L28">        this.errorReporter = errorReporter;</span>
+<span class="nc" id="L29">        this.redisKey = redisKey;</span>
+<span class="nc" id="L30">    }</span>
 
     public boolean sendMessage(GelfMessage message) {
 
         // prevent recursive self calls caused by the Redis driver since it
-<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (!callers.add(Thread.currentThread())) {</span>
-<span class="fc" id="L36">            return false;</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (!callers.add(Thread.currentThread())) {</span>
+<span class="nc" id="L36">            return false;</span>
         }
 
         try {
-<span class="fc" id="L40">            return sendMessage0(message);</span>
+<span class="nc" id="L40">            return sendMessage0(message);</span>
         } finally {
-<span class="pc" id="L42">            callers.remove(Thread.currentThread());</span>
+<span class="nc" id="L42">            callers.remove(Thread.currentThread());</span>
         }
     }
 

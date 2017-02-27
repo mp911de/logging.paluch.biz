@@ -7,5 +7,7 @@ biz.paluch.logging.gelf.jul
 biz.paluch.logging.gelf.log4j
 biz.paluch.logging.gelf.log4j2
 biz.paluch.logging.gelf.logback
+biz.paluch.logging.gelf.netty
 biz.paluch.logging.gelf.standalone
 biz.paluch.logging.gelf.wildfly
+external
