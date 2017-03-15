@@ -9,20 +9,6 @@ import java.nio.ByteBuffer;
  */
 <span class="fc" id="L10">abstract class OutputAccessor {</span>
 
-<span class="fc" id="L12">    private static final ThreadLocal&lt;ByteBufferOutputAccessor&gt; accessors = new ThreadLocal&lt;ByteBufferOutputAccessor&gt;() {</span>
-        @Override
-        protected ByteBufferOutputAccessor initialValue() {
-<span class="fc" id="L15">            return new ByteBufferOutputAccessor();</span>
-        }
-    };
-
-<span class="fc" id="L19">    private static final ThreadLocal&lt;ByteBufferOutputStream&gt; streams = new ThreadLocal&lt;ByteBufferOutputStream&gt;() {</span>
-        @Override
-        protected ByteBufferOutputStream initialValue() {
-<span class="fc" id="L22">            return new ByteBufferOutputStream(null);</span>
-        }
-    };
-
     public abstract void write(int b);
 
     public abstract void write(byte[] b);
@@ -31,12 +17,12 @@ import java.nio.ByteBuffer;
 
     /**
      * Create an {@link OutputAccessor} for the given {@link OutputStream}.
-     * 
+     *
      * @param outputStream
      * @return
      */
     public static OutputAccessor from(OutputStream outputStream) {
-<span class="fc" id="L39">        return new OutputStreamAccessor(outputStream);</span>
+<span class="fc" id="L25">        return new OutputStreamAccessor(outputStream);</span>
     }
 
     /**
@@ -47,110 +33,162 @@ import java.nio.ByteBuffer;
      */
     public static OutputAccessor from(ByteBuffer byteBuffer) {
 
-<span class="fc" id="L50">        ByteBufferOutputAccessor accessor = accessors.get();</span>
-<span class="fc" id="L51">        accessor.byteBuffer = byteBuffer;</span>
+<span class="fc" id="L36">        ByteBufferOutputAccessor accessor = new ByteBufferOutputAccessor();</span>
+<span class="fc" id="L37">        accessor.byteBuffer = byteBuffer;</span>
 
-<span class="fc" id="L53">        return accessor;</span>
+<span class="fc" id="L39">        return accessor;</span>
+    }
+
+    /**
+     * Create an {@link OutputAccessor} for the given {@link ByteBuffer}. Instances are pooled within the thread scope.
+     *
+     * @param poolHolder
+     * @param byteBuffer
+     * @return
+     */
+    public static OutputAccessor from(OutputAccessorPoolHolder poolHolder, ByteBuffer byteBuffer) {
+
+<span class="fc" id="L51">        ByteBufferOutputAccessor accessor = poolHolder.getByteBufferOutputAccessor();</span>
+<span class="fc" id="L52">        accessor.byteBuffer = byteBuffer;</span>
+
+<span class="fc" id="L54">        return accessor;</span>
     }
 
     /**
      * Retrieve a pooled {@link OutputStream}.
      *
+     * @param poolHolder
      * @return
      */
-    public static OutputStream pooledStream() {
-<span class="fc" id="L62">        return streams.get();</span>
+    public static OutputStream pooledStream(OutputAccessorPoolHolder poolHolder) {
+<span class="fc" id="L64">        return poolHolder.getByteBufferOutputStream();</span>
     }
 
     /**
-     * Retrieved a pooled an {@link OutputStream} for the given {@link ByteBuffer}. Instances are pooled within the thread scope.
+     * Retrieved a pooled an {@link OutputStream} for the given {@link ByteBuffer}. Instances are pooled within the thread
+     * scope.
      *
+     * @param poolHolder
      * @param byteBuffer
      * @return
      */
-    public static OutputStream asStream(ByteBuffer byteBuffer) {
+    public static OutputStream asStream(OutputAccessorPoolHolder poolHolder, ByteBuffer byteBuffer) {
 
-<span class="fc" id="L73">        ByteBufferOutputStream accessor = streams.get();</span>
-<span class="fc" id="L74">        accessor.byteBuffer = byteBuffer;</span>
+<span class="fc" id="L77">        ByteBufferOutputStream accessor = poolHolder.getByteBufferOutputStream();</span>
+<span class="fc" id="L78">        accessor.byteBuffer = byteBuffer;</span>
 
-<span class="fc" id="L76">        return accessor;</span>
+<span class="fc" id="L80">        return accessor;</span>
     }
 
-<span class="fc" id="L79">    static class ByteBufferOutputAccessor extends OutputAccessor {</span>
+<span class="fc" id="L83">    static class ByteBufferOutputAccessor extends OutputAccessor {</span>
         private ByteBuffer byteBuffer;
 
         @Override
         public void write(byte[] b, int off, int len) {
-<span class="nc" id="L84">            byteBuffer.put(b, off, len);</span>
-<span class="nc" id="L85">        }</span>
+<span class="nc" id="L88">            byteBuffer.put(b, off, len);</span>
+<span class="nc" id="L89">        }</span>
 
         @Override
         public void write(byte[] b) {
-<span class="fc" id="L89">            byteBuffer.put(b);</span>
-<span class="fc" id="L90">        }</span>
+<span class="fc" id="L93">            byteBuffer.put(b);</span>
+<span class="fc" id="L94">        }</span>
 
         @Override
         public void write(int b) {
-<span class="fc" id="L94">            byteBuffer.put((byte) b);</span>
-<span class="fc" id="L95">        }</span>
+<span class="fc" id="L98">            byteBuffer.put((byte) b);</span>
+<span class="fc" id="L99">        }</span>
     }
 
     static class ByteBufferOutputStream extends OutputStream {
         private ByteBuffer byteBuffer;
 
-<span class="fc" id="L101">        public ByteBufferOutputStream(ByteBuffer byteBuffer) {</span>
-<span class="fc" id="L102">            this.byteBuffer = byteBuffer;</span>
-<span class="fc" id="L103">        }</span>
+<span class="fc" id="L105">        public ByteBufferOutputStream(ByteBuffer byteBuffer) {</span>
+<span class="fc" id="L106">            this.byteBuffer = byteBuffer;</span>
+<span class="fc" id="L107">        }</span>
 
         @Override
         public void write(byte[] b, int off, int len) {
-<span class="fc" id="L107">            byteBuffer.put(b, off, len);</span>
-<span class="fc" id="L108">        }</span>
+<span class="fc" id="L111">            byteBuffer.put(b, off, len);</span>
+<span class="fc" id="L112">        }</span>
 
         @Override
         public void write(byte[] b) {
-<span class="fc" id="L112">            byteBuffer.put(b);</span>
-<span class="fc" id="L113">        }</span>
+<span class="fc" id="L116">            byteBuffer.put(b);</span>
+<span class="fc" id="L117">        }</span>
 
         @Override
         public void write(int b) {
-<span class="nc" id="L117">            byteBuffer.put((byte) b);</span>
-<span class="nc" id="L118">        }</span>
+<span class="nc" id="L121">            byteBuffer.put((byte) b);</span>
+<span class="nc" id="L122">        }</span>
     }
 
-<span class="fc" id="L121">    static class OutputStreamAccessor extends OutputAccessor {</span>
+    static class OutputStreamAccessor extends OutputAccessor {
         private final OutputStream delegate;
 
-<span class="fc" id="L124">        public OutputStreamAccessor(OutputStream delegate) {</span>
-<span class="fc" id="L125">            this.delegate = delegate;</span>
-<span class="fc" id="L126">        }</span>
+<span class="fc" id="L128">        public OutputStreamAccessor(OutputStream delegate) {</span>
+<span class="fc" id="L129">            this.delegate = delegate;</span>
+<span class="fc" id="L130">        }</span>
 
         @Override
         public void write(byte[] b, int off, int len) {
             try {
-<span class="nc" id="L131">                delegate.write(b, off, len);</span>
-<span class="nc" id="L132">            } catch (IOException e) {</span>
-<span class="nc" id="L133">                throw new IllegalStateException(e);</span>
-<span class="nc" id="L134">            }</span>
-<span class="nc" id="L135">        }</span>
+<span class="nc" id="L135">                delegate.write(b, off, len);</span>
+<span class="nc" id="L136">            } catch (IOException e) {</span>
+<span class="nc" id="L137">                throw new IllegalStateException(e);</span>
+<span class="nc" id="L138">            }</span>
+<span class="nc" id="L139">        }</span>
 
         @Override
         public void write(byte[] b) {
             try {
-<span class="fc" id="L140">                delegate.write(b);</span>
-<span class="nc" id="L141">            } catch (IOException e) {</span>
-<span class="nc" id="L142">                throw new IllegalStateException(e);</span>
-<span class="fc" id="L143">            }</span>
-<span class="fc" id="L144">        }</span>
+<span class="fc" id="L144">                delegate.write(b);</span>
+<span class="nc" id="L145">            } catch (IOException e) {</span>
+<span class="nc" id="L146">                throw new IllegalStateException(e);</span>
+<span class="fc" id="L147">            }</span>
+<span class="fc" id="L148">        }</span>
 
         @Override
         public void write(int b) {
             try {
-<span class="fc" id="L149">                delegate.write(b);</span>
-<span class="nc" id="L150">            } catch (IOException e) {</span>
-<span class="nc" id="L151">                throw new IllegalStateException(e);</span>
-<span class="fc" id="L152">            }</span>
-<span class="fc" id="L153">        }</span>
+<span class="fc" id="L153">                delegate.write(b);</span>
+<span class="nc" id="L154">            } catch (IOException e) {</span>
+<span class="nc" id="L155">                throw new IllegalStateException(e);</span>
+<span class="fc" id="L156">            }</span>
+<span class="fc" id="L157">        }</span>
+    }
+
+    /**
+     * Holder for {@link ThreadLocal} pools.
+     */
+<span class="fc" id="L163">    static class OutputAccessorPoolHolder {</span>
+
+<span class="fc" id="L165">        private final ThreadLocal&lt;ByteBufferOutputAccessor&gt; accessorPool = new ThreadLocal&lt;ByteBufferOutputAccessor&gt;() {</span>
+            @Override
+            protected ByteBufferOutputAccessor initialValue() {
+<span class="fc" id="L168">                return new ByteBufferOutputAccessor();</span>
+            }
+        };
+
+<span class="fc" id="L172">        private final ThreadLocal&lt;ByteBufferOutputStream&gt; streamPool = new ThreadLocal&lt;ByteBufferOutputStream&gt;() {</span>
+            @Override
+            protected ByteBufferOutputStream initialValue() {
+<span class="fc" id="L175">                return new ByteBufferOutputStream(null);</span>
+            }
+        };
+
+        /**
+         * @return a pooled {@link ByteBufferOutputAccessor} instance.
+         */
+        public ByteBufferOutputAccessor getByteBufferOutputAccessor() {
+<span class="fc" id="L183">            return accessorPool.get();</span>
+        }
+
+        /**
+         * @return a pooled {@link ByteBufferOutputStream} instance.
+         */
+        public ByteBufferOutputStream getByteBufferOutputStream() {
+<span class="fc" id="L190">            return streamPool.get();</span>
+        }
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

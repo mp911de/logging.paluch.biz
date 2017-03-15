@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PoolHolder.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern</a> &gt; <span class="el_source">PoolHolder.java</span></div><h1>PoolHolder.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+/**
+ * Holder for {@link ThreadLocal} pools.
+ *
+ * @author Mark Paluch
+ */
+<span class="fc" id="L11">abstract class PoolHolder {</span>
+
+    public static PoolHolder noop() {
+<span class="nc" id="L14">        return NoOpPoolHolder.noop();</span>
+    }
+
+    public static PoolHolder threadLocal() {
+<span class="fc" id="L18">        return new ThreadLocalPoolHolder();</span>
+    }
+
+    /**
+     * @return the {@link OutputAccessor.OutputAccessorPoolHolder}.
+     */
+    public abstract OutputAccessor.OutputAccessorPoolHolder getOutputAccessorPoolHolder();
+
+    /**
+     * @return a pooled {@link ReusableGzipOutputStream} instance.
+     */
+    public abstract ReusableGzipOutputStream getReusableGzipOutputStream();
+
+    /**
+     * @return a pooled {@link ByteBuffer}-array instance.
+     */
+    public abstract ByteBuffer[] getSingleBuffer();
+
+    /**
+     * @return a pooled byte-array instance.
+     */
+    public abstract byte[] getByteArray();
+
+<span class="nc" id="L41">    private static class NoOpPoolHolder extends PoolHolder {</span>
+
+<span class="nc" id="L43">        private final static NoOpPoolHolder instance = new NoOpPoolHolder();</span>
+
+        public static PoolHolder noop() {
+<span class="nc" id="L46">            return instance;</span>
+        }
+
+        @Override
+        public OutputAccessor.OutputAccessorPoolHolder getOutputAccessorPoolHolder() {
+<span class="nc" id="L51">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public ReusableGzipOutputStream getReusableGzipOutputStream() {
+<span class="nc" id="L56">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public ByteBuffer[] getSingleBuffer() {
+<span class="nc" id="L61">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public byte[] getByteArray() {
+<span class="nc" id="L66">            throw new UnsupportedOperationException();</span>
+        }
+    }
+
+    /**
+     * {@link PoolHolder} backed by {@link ThreadLocal}.
+     */
+<span class="fc" id="L73">    private static class ThreadLocalPoolHolder extends PoolHolder {</span>
+
+        private final OutputAccessor.OutputAccessorPoolHolder outputAccessorPoolHolder;
+
+<span class="fc" id="L77">        private final ThreadLocal&lt;ReusableGzipOutputStream&gt; streamPool = new ThreadLocal&lt;ReusableGzipOutputStream&gt;() {</span>
+            @Override
+            protected ReusableGzipOutputStream initialValue() {
+                try {
+<span class="fc" id="L81">                    return new ReusableGzipOutputStream(OutputAccessor.pooledStream(outputAccessorPoolHolder));</span>
+<span class="nc" id="L82">                } catch (IOException e) {</span>
+<span class="nc" id="L83">                    throw new IllegalStateException(e);</span>
+                }
+            }
+        };
+
+<span class="fc" id="L88">        private final ThreadLocal&lt;ByteBuffer[]&gt; singleBufferPool = new ThreadLocal&lt;ByteBuffer[]&gt;() {</span>
+            @Override
+            protected ByteBuffer[] initialValue() {
+<span class="fc" id="L91">                return new ByteBuffer[1];</span>
+            }
+        };
+
+<span class="fc" id="L95">        private final ThreadLocal&lt;byte[]&gt; byteArrayPool = new ThreadLocal&lt;byte[]&gt;() {</span>
+            @Override
+            protected byte[] initialValue() {
+<span class="fc" id="L98">                return new byte[8192 * 2];</span>
+            }
+        };
+
+        /**
+         * Create a new {@link PoolHolder} instance.
+         */
+        public ThreadLocalPoolHolder() {
+<span class="fc" id="L106">            this(new OutputAccessor.OutputAccessorPoolHolder());</span>
+<span class="fc" id="L107">        }</span>
+
+<span class="fc" id="L109">        private ThreadLocalPoolHolder(OutputAccessor.OutputAccessorPoolHolder outputAccessorPoolHolder) {</span>
+<span class="fc" id="L110">            this.outputAccessorPoolHolder = outputAccessorPoolHolder;</span>
+<span class="fc" id="L111">        }</span>
+
+        /**
+         * @return the {@link OutputAccessor.OutputAccessorPoolHolder}.
+         */
+        public OutputAccessor.OutputAccessorPoolHolder getOutputAccessorPoolHolder() {
+<span class="fc" id="L117">            return outputAccessorPoolHolder;</span>
+        }
+
+        /**
+         * @return a pooled {@link ReusableGzipOutputStream} instance.
+         */
+        public ReusableGzipOutputStream getReusableGzipOutputStream() {
+<span class="fc" id="L124">            return streamPool.get();</span>
+        }
+
+        /**
+         * @return a pooled {@link ByteBuffer}-array instance.
+         */
+        public ByteBuffer[] getSingleBuffer() {
+<span class="fc" id="L131">            return singleBufferPool.get();</span>
+        }
+
+        /**
+         * @return a pooled byte-array instance.
+         */
+        public byte[] getByteArray() {
+<span class="fc" id="L138">            return byteArrayPool.get();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
