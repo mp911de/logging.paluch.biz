@@ -22,8 +22,8 @@ import biz.paluch.logging.gelf.intern.ErrorReporter;
 public class GelfTCPSSLSender extends GelfTCPSender {
 
     private final SSLContext sslContext;
-<span class="nc" id="L25">    private final ThreadLocal&lt;ByteBuffer&gt; sslNetworkBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
-<span class="nc" id="L26">    private final ThreadLocal&lt;ByteBuffer&gt; tempBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
+<span class="fc" id="L25">    private final ThreadLocal&lt;ByteBuffer&gt; sslNetworkBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
+<span class="fc" id="L26">    private final ThreadLocal&lt;ByteBuffer&gt; tempBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
 
     private volatile SSLEngine sslEngine;
 
@@ -43,10 +43,10 @@ public class GelfTCPSSLSender extends GelfTCPSender {
     public GelfTCPSSLSender(String host, int port, int connectTimeoutMs, int readTimeoutMs, int deliveryAttempts,
             boolean keepAlive, ErrorReporter errorReporter, SSLContext sslContext) throws IOException {
 
-<span class="nc" id="L46">        super(host, port, connectTimeoutMs, readTimeoutMs, deliveryAttempts, keepAlive, errorReporter);</span>
+<span class="fc" id="L46">        super(host, port, connectTimeoutMs, readTimeoutMs, deliveryAttempts, keepAlive, errorReporter);</span>
 
-<span class="nc" id="L48">        this.sslContext = sslContext;</span>
-<span class="nc" id="L49">    }</span>
+<span class="fc" id="L48">        this.sslContext = sslContext;</span>
+<span class="fc" id="L49">    }</span>
 
     @Override
     protected boolean connect() throws IOException {
@@ -248,23 +248,29 @@ public class GelfTCPSSLSender extends GelfTCPSender {
     @Override
     public void close() {
 
-<span class="nc bnc" id="L251" title="All 2 branches missed.">        if (channel() != null) {</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">        if (channel() != null) {</span>
 
             try {
-<span class="nc" id="L254">                closeSocketChannel();</span>
+<span class="fc" id="L254">                closeSocketChannel();</span>
 <span class="nc" id="L255">            } catch (IOException e) {</span>
 <span class="nc" id="L256">                reportError(e.getMessage(), e);</span>
-<span class="nc" id="L257">            }</span>
+<span class="fc" id="L257">            }</span>
         }
 
-<span class="nc" id="L260">        super.close();</span>
-<span class="nc" id="L261">    }</span>
+<span class="fc" id="L260">        super.close();</span>
+<span class="fc" id="L261">    }</span>
 
     private void closeSocketChannel() throws IOException {
 
-<span class="nc" id="L265">        sslEngine.closeOutbound();</span>
-<span class="nc" id="L266">        doHandshake(channel(), sslEngine, ByteBuffer.allocate(sslSession.getPacketBufferSize()),</span>
-<span class="nc" id="L267">                ByteBuffer.allocate(sslSession.getPacketBufferSize()));</span>
-<span class="nc" id="L268">    }</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        if (sslEngine != null) {</span>
+
+<span class="nc" id="L267">            sslEngine.closeOutbound();</span>
+
+<span class="nc bnc" id="L269" title="All 2 branches missed.">            if (sslSession != null) {</span>
+<span class="nc" id="L270">                doHandshake(channel(), sslEngine, ByteBuffer.allocate(sslSession.getPacketBufferSize()),</span>
+<span class="nc" id="L271">                        ByteBuffer.allocate(sslSession.getPacketBufferSize()));</span>
+            }
+        }
+<span class="fc" id="L274">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

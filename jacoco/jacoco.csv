@@ -36,7 +36,7 @@ logstash logging connectors,biz.paluch.logging.gelf.log4j,Log4jLogEvent,33,294,7
 logstash logging connectors,biz.paluch.logging.gelf.log4j,GelfLogAppender,38,249,3,9,12,64,8,36,5,33
 logstash logging connectors,biz.paluch.logging.gelf.intern.sender,DefaultGelfSenderProvider.new DefaultGelfSenderProvider.GelfSenderProducer() {...},20,3,0,0,3,1,1,1,1,1
 logstash logging connectors,biz.paluch.logging.gelf.intern.sender,GelfTCPSender.new ThreadLocal() {...},0,9,0,0,0,2,0,2,0,2
-logstash logging connectors,biz.paluch.logging.gelf.intern.sender,GelfTCPSSLSender,388,0,53,0,103,0,41,0,11,0
+logstash logging connectors,biz.paluch.logging.gelf.intern.sender,GelfTCPSSLSender,358,36,55,2,93,12,40,3,8,3
 logstash logging connectors,biz.paluch.logging.gelf.intern.sender,AbstractNioSender.new ThreadLocal() {...},0,9,0,0,0,2,0,2,0,2
 logstash logging connectors,biz.paluch.logging.gelf.intern.sender,AbstractNioSender,8,89,1,7,2,26,1,13,0,10
 logstash logging connectors,biz.paluch.logging.gelf.intern.sender,QueryStringParser,14,217,9,27,3,53,9,16,1,6
@@ -69,7 +69,7 @@ logstash logging connectors,biz.paluch.logging.gelf.intern,ConfigurationSupport,
 logstash logging connectors,biz.paluch.logging.gelf.intern,Charsets,7,11,0,0,2,3,2,2,2,2
 logstash logging connectors,biz.paluch.logging.gelf.intern,PoolingGelfMessage.new ThreadLocal() {...},0,6,0,0,0,2,0,2,0,2
 logstash logging connectors,biz.paluch.logging.gelf.intern,PoolingGelfMessage.new ThreadLocal() {...},6,8,0,0,2,2,0,2,0,2
-logstash logging connectors,biz.paluch.logging.gelf.intern,JsonWriter,90,409,18,48,30,120,14,35,1,12
+logstash logging connectors,biz.paluch.logging.gelf.intern,JsonWriter,86,413,17,49,28,122,13,36,1,12
 logstash logging connectors,biz.paluch.logging.gelf.intern,PoolingGelfMessage.new ThreadLocal() {...},0,6,0,0,0,2,0,2,0,2
 logstash logging connectors,biz.paluch.logging.gelf.intern,PoolingGelfMessage,57,109,5,5,15,32,5,5,1,4
 logstash logging connectors,biz.paluch.logging.gelf.intern,OutputAccessor.new ThreadLocal() {...},0,8,0,0,0,2,0,2,0,2
