@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RuntimeContainer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">RuntimeContainer.java</span></div><h1>RuntimeContainer.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RuntimeContainer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">RuntimeContainer.java</span></div><h1>RuntimeContainer.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
 
 import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_FQDN_HOSTNAME;
 import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_HOSTNAME;
@@ -99,7 +99,7 @@ public class RuntimeContainer {
                 }
 
 <span class="pc bpc" id="L101" title="1 of 2 branches missed.">                if (inetAddress == null) {</span>
-<span class="fc" id="L102">                    inetAddress = InetAddress.getLocalHost();</span>
+<span class="nc" id="L102">                    inetAddress = InetAddress.getLocalHost();</span>
                 }
 
 <span class="fc" id="L105">                myHostName = getHostname(inetAddress, false);</span>
@@ -118,8 +118,8 @@ public class RuntimeContainer {
     private static String getHostname(InetAddress inetAddress, boolean fqdn) throws IOException {
 
 <span class="fc" id="L120">        String hostname = inetAddress.getHostName();</span>
-<span class="pc bpc" id="L121" title="3 of 4 branches missed.">        if (hostname.indexOf('.') != -1 &amp;&amp; !fqdn) {</span>
-<span class="nc" id="L122">            hostname = hostname.substring(0, hostname.indexOf('.'));</span>
+<span class="pc bpc" id="L121" title="1 of 4 branches missed.">        if (hostname.indexOf('.') != -1 &amp;&amp; !fqdn) {</span>
+<span class="fc" id="L122">            hostname = hostname.substring(0, hostname.indexOf('.'));</span>
         }
 
 <span class="fc" id="L125">        return hostname;</span>
@@ -128,24 +128,24 @@ public class RuntimeContainer {
     private static InetAddress getInetAddressWithHostname() throws SocketException {
 <span class="fc" id="L129">        Enumeration&lt;NetworkInterface&gt; netInterfaces = NetworkInterface.getNetworkInterfaces();</span>
 
-<span class="fc bfc" id="L131" title="All 2 branches covered.">        while (netInterfaces.hasMoreElements()) {</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        while (netInterfaces.hasMoreElements()) {</span>
 <span class="fc" id="L132">            NetworkInterface ni = netInterfaces.nextElement();</span>
 <span class="fc" id="L133">            Enumeration&lt;InetAddress&gt; ias = ni.getInetAddresses();</span>
 <span class="fc bfc" id="L134" title="All 2 branches covered.">            while (ias.hasMoreElements()) {</span>
 <span class="fc" id="L135">                InetAddress inetAddress = ias.nextElement();</span>
 
-<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                if (!isQualified(inetAddress)) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">                if (!isQualified(inetAddress)) {</span>
 <span class="fc" id="L138">                    continue;</span>
                 }
-<span class="nc" id="L140">                return inetAddress;</span>
+<span class="fc" id="L140">                return inetAddress;</span>
             }
 <span class="fc" id="L142">        }</span>
 
-<span class="fc" id="L144">        return null;</span>
+<span class="nc" id="L144">        return null;</span>
     }
 
     private static boolean isQualified(InetAddress inetAddress) {
-<span class="pc bpc" id="L148" title="1 of 4 branches missed.">        return !inetAddress.isLoopbackAddress() &amp;&amp; !inetAddress.getHostAddress().equals(inetAddress.getCanonicalHostName());</span>
+<span class="fc bfc" id="L148" title="All 4 branches covered.">        return !inetAddress.isLoopbackAddress() &amp;&amp; !inetAddress.getHostAddress().equals(inetAddress.getCanonicalHostName());</span>
     }
 
     public static void main(String[] args) {
