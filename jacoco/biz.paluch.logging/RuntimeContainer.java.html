@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RuntimeContainer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">RuntimeContainer.java</span></div><h1>RuntimeContainer.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
+
+import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_FQDN_HOSTNAME;
+import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_HOSTNAME;
+import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_HOSTNAME_RESOLUTION_ORDER;
+import static biz.paluch.logging.RuntimeContainerProperties.PROPERTY_LOGSTASH_GELF_SKIP_HOSTNAME_RESOLUTION;
+import static biz.paluch.logging.RuntimeContainerProperties.RESOLUTION_ORDER_LOCALHOST_NETWORK_FALLBACK;
+import static biz.paluch.logging.RuntimeContainerProperties.RESOLUTION_ORDER_NETWORK_LOCALHOST_FALLBACK;
+import static biz.paluch.logging.RuntimeContainerProperties.getProperty;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+
+import biz.paluch.logging.gelf.intern.ErrorReporter;
+
+/**
+ * Static Details about the runtime container: Hostname (simple/fqdn), Address and timestamp of the first access (time when the
+ * application was loaded).
+ * 
+ * @author Mark Paluch
+ */
+public class RuntimeContainer {
+
+    /**
+     * Current Hostname.
+     */
+    public static String HOSTNAME;
+
+    /**
+     * Current FQDN Hostname.
+     */
+    public static String FQDN_HOSTNAME;
+
+    /**
+     * Current Address.
+     */
+    public static String ADDRESS;
+
+    /**
+     * Load-Time of this class.
+     */
+    public static final long FIRST_ACCESS;
+
+    private static boolean initialized;
+
+    /**
+     * Utility Constructor.
+     */
+<span class="nc" id="L52">    private RuntimeContainer() {</span>
+
+<span class="nc" id="L54">    }</span>
+
+    static {
+<span class="fc" id="L57">        FIRST_ACCESS = System.currentTimeMillis();</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Initialize only once.
+     * @param errorReporter the error reporter
+     */
+    public static void initialize(ErrorReporter errorReporter) {
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (!initialized) {</span>
+<span class="fc" id="L67">            lookupHostname(errorReporter);</span>
+<span class="fc" id="L68">            initialized = true;</span>
+        }
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Triggers the hostname lookup.
+     * @param errorReporter the error reporter
+     */
+    public static void lookupHostname(ErrorReporter errorReporter) {
+<span class="fc" id="L77">        String myHostName = getProperty(PROPERTY_LOGSTASH_GELF_HOSTNAME, &quot;unknown&quot;);</span>
+<span class="fc" id="L78">        String myFQDNHostName = getProperty(PROPERTY_LOGSTASH_GELF_FQDN_HOSTNAME, &quot;unknown&quot;);</span>
+<span class="fc" id="L79">        String myAddress = &quot;&quot;;</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (!Boolean.parseBoolean(getProperty(PROPERTY_LOGSTASH_GELF_SKIP_HOSTNAME_RESOLUTION, &quot;false&quot;))) {</span>
+
+            try {
+
+<span class="fc" id="L85">                String resolutionOrder = getProperty(PROPERTY_LOGSTASH_GELF_HOSTNAME_RESOLUTION_ORDER,</span>
+                        RESOLUTION_ORDER_NETWORK_LOCALHOST_FALLBACK);
+
+<span class="fc" id="L88">                InetAddress inetAddress = null;</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (resolutionOrder.equals(RESOLUTION_ORDER_NETWORK_LOCALHOST_FALLBACK)) {</span>
+<span class="fc" id="L90">                    inetAddress = getInetAddressWithHostname();</span>
+                }
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                if (resolutionOrder.equals(RESOLUTION_ORDER_LOCALHOST_NETWORK_FALLBACK)) {</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    if (isQualified(InetAddress.getLocalHost())) {</span>
+<span class="nc" id="L95">                        inetAddress = InetAddress.getLocalHost();</span>
+                    } else {
+<span class="fc" id="L97">                        inetAddress = getInetAddressWithHostname();</span>
+                    }
+                }
+
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">                if (inetAddress == null) {</span>
+<span class="fc" id="L102">                    inetAddress = InetAddress.getLocalHost();</span>
+                }
+
+<span class="fc" id="L105">                myHostName = getHostname(inetAddress, false);</span>
+<span class="fc" id="L106">                myFQDNHostName = getHostname(inetAddress, true);</span>
+<span class="fc" id="L107">                myAddress = inetAddress.getHostAddress();</span>
+<span class="nc" id="L108">            } catch (IOException e) {</span>
+<span class="nc" id="L109">                errorReporter.reportError(&quot;Cannot resolve hostname&quot;, e);</span>
+<span class="fc" id="L110">            }</span>
+        }
+
+<span class="fc" id="L113">        FQDN_HOSTNAME = myFQDNHostName;</span>
+<span class="fc" id="L114">        HOSTNAME = myHostName;</span>
+<span class="fc" id="L115">        ADDRESS = myAddress;</span>
+<span class="fc" id="L116">    }</span>
+
+    private static String getHostname(InetAddress inetAddress, boolean fqdn) throws IOException {
+
+<span class="fc" id="L120">        String hostname = inetAddress.getHostName();</span>
+<span class="pc bpc" id="L121" title="3 of 4 branches missed.">        if (hostname.indexOf('.') != -1 &amp;&amp; !fqdn) {</span>
+<span class="nc" id="L122">            hostname = hostname.substring(0, hostname.indexOf('.'));</span>
+        }
+
+<span class="fc" id="L125">        return hostname;</span>
+    }
+
+    private static InetAddress getInetAddressWithHostname() throws SocketException {
+<span class="fc" id="L129">        Enumeration&lt;NetworkInterface&gt; netInterfaces = NetworkInterface.getNetworkInterfaces();</span>
+
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        while (netInterfaces.hasMoreElements()) {</span>
+<span class="fc" id="L132">            NetworkInterface ni = netInterfaces.nextElement();</span>
+<span class="fc" id="L133">            Enumeration&lt;InetAddress&gt; ias = ni.getInetAddresses();</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            while (ias.hasMoreElements()) {</span>
+<span class="fc" id="L135">                InetAddress inetAddress = ias.nextElement();</span>
+
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                if (!isQualified(inetAddress)) {</span>
+<span class="fc" id="L138">                    continue;</span>
+                }
+<span class="nc" id="L140">                return inetAddress;</span>
+            }
+<span class="fc" id="L142">        }</span>
+
+<span class="fc" id="L144">        return null;</span>
+    }
+
+    private static boolean isQualified(InetAddress inetAddress) {
+<span class="pc bpc" id="L148" title="1 of 4 branches missed.">        return !inetAddress.isLoopbackAddress() &amp;&amp; !inetAddress.getHostAddress().equals(inetAddress.getCanonicalHostName());</span>
+    }
+
+    public static void main(String[] args) {
+<span class="fc" id="L152">        System.out.println(&quot;Host-Resolution: &quot; + FQDN_HOSTNAME + &quot;/&quot; + HOSTNAME);</span>
+<span class="fc" id="L153">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

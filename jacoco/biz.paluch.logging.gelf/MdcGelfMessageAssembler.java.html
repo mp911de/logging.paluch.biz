@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>MdcGelfMessageAssembler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf</a> &gt; <span class="el_source">MdcGelfMessageAssembler.java</span></div><h1>MdcGelfMessageAssembler.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf;
+
+import java.util.Set;
+
+import biz.paluch.logging.gelf.intern.GelfMessage;
+
+/**
+ * Message-Assembler using MDC.
+ * 
+ * @author Mark Paluch
+ * @since 26.09.13 15:05
+ */
+<span class="fc" id="L13">public class MdcGelfMessageAssembler extends GelfMessageAssembler {</span>
+
+    public static final String PROPERTY_MDC_PROFILING = &quot;mdcProfiling&quot;;
+    public static final String PROPERTY_INCLUDE_FULL_MDC = &quot;includeFullMdc&quot;;
+    public static final String PROPERTY_MDC_FIELD = &quot;mdcField.&quot;;
+    public static final String PROPERTY_DYNAMIC_MDC_FIELD = &quot;dynamicMdcFields.&quot;;
+
+    private boolean mdcProfiling;
+    private boolean includeFullMdc;
+
+    public void initialize(PropertyProvider propertyProvider) {
+
+<span class="fc" id="L25">        super.initialize(propertyProvider);</span>
+<span class="fc" id="L26">        mdcProfiling = &quot;true&quot;.equalsIgnoreCase(propertyProvider.getProperty(PROPERTY_MDC_PROFILING));</span>
+<span class="fc" id="L27">        includeFullMdc = &quot;true&quot;.equalsIgnoreCase(propertyProvider.getProperty(PROPERTY_INCLUDE_FULL_MDC));</span>
+
+<span class="fc" id="L29">    }</span>
+
+    public GelfMessage createGelfMessage(LogEvent logEvent) {
+
+<span class="fc" id="L33">        GelfMessage gelfMessage = super.createGelfMessage(logEvent);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (mdcProfiling) {</span>
+<span class="fc" id="L35">            GelfUtil.addMdcProfiling(logEvent, gelfMessage);</span>
+        }
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (includeFullMdc) {</span>
+<span class="fc" id="L39">            Set&lt;String&gt; mdcNames = logEvent.getMdcNames();</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            for (String mdcName : mdcNames) {</span>
+
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">                if (mdcName == null) {</span>
+<span class="nc" id="L43">                    continue;</span>
+                }
+
+<span class="fc" id="L46">                String mdcValue = logEvent.getMdcValue(mdcName);</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">                if (mdcValue != null) {</span>
+<span class="fc" id="L48">                    gelfMessage.addField(mdcName, mdcValue);</span>
+                }
+<span class="fc" id="L50">            }</span>
+        }
+
+<span class="fc" id="L53">        return gelfMessage;</span>
+    }
+
+    public boolean isMdcProfiling() {
+<span class="fc" id="L57">        return mdcProfiling;</span>
+    }
+
+    public void setMdcProfiling(boolean mdcProfiling) {
+<span class="fc" id="L61">        this.mdcProfiling = mdcProfiling;</span>
+<span class="fc" id="L62">    }</span>
+
+    public boolean isIncludeFullMdc() {
+<span class="fc" id="L65">        return includeFullMdc;</span>
+    }
+
+    public void setIncludeFullMdc(boolean includeFullMdc) {
+<span class="fc" id="L69">        this.includeFullMdc = includeFullMdc;</span>
+<span class="fc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

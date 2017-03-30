@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>LogMessageField.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf</a> &gt; <span class="el_source">LogMessageField.java</span></div><h1>LogMessageField.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf;
+
+import static biz.paluch.logging.RuntimeContainerProperties.getProperty;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import biz.paluch.logging.gelf.intern.Closer;
+
+/**
+ * Field with reference to the log event.
+ *
+ * @author Mark Paluch
+ */
+public class LogMessageField implements MessageField {
+
+    public static final String VERBOSE_LOGGING_PROPERTY = &quot;logstash-gelf.LogMessageField.verbose&quot;;
+
+    private static final String DEFAULT_MAPPING = &quot;default-logstash-fields.properties&quot;;
+<span class="fc" id="L25">    private static final boolean VERBOSE_LOGGING = Boolean.parseBoolean(getProperty(VERBOSE_LOGGING_PROPERTY, &quot;false&quot;));</span>
+
+    /**
+     * Named references to common log event fields.
+     */
+<span class="pc" id="L30">    public static enum NamedLogField {</span>
+<span class="fc" id="L31">        Time(&quot;Time&quot;), Severity(&quot;Severity&quot;), ThreadName(&quot;Thread&quot;), SourceClassName(&quot;SourceClassName&quot;), SourceSimpleClassName(</span>
+<span class="fc" id="L32">                &quot;SourceSimpleClassName&quot;), SourceMethodName(&quot;SourceMethodName&quot;), SourceLineNumber(&quot;SourceLineNumber&quot;), Server(</span>
+<span class="fc" id="L33">                &quot;Server&quot;), LoggerName(&quot;LoggerName&quot;), Marker(&quot;Marker&quot;), NDC(&quot;NDC&quot;);</span>
+
+        private final String fieldName;
+
+<span class="fc" id="L37">        NamedLogField(String fieldName) {</span>
+<span class="fc" id="L38">            this.fieldName = fieldName;</span>
+<span class="fc" id="L39">        }</span>
+
+        public String getFieldName() {
+<span class="fc" id="L42">            return fieldName;</span>
+        }
+
+        public static NamedLogField byName(String name) {
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            for (NamedLogField namedLogField : values()) {</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">                if (namedLogField.name().equalsIgnoreCase(name)) {</span>
+<span class="fc" id="L48">                    return namedLogField;</span>
+                }
+            }
+
+<span class="fc" id="L52">            return null;</span>
+        }
+    }
+
+    private String name;
+    private NamedLogField namedLogField;
+
+<span class="fc" id="L59">    public LogMessageField(String name, NamedLogField namedLogField) {</span>
+<span class="fc" id="L60">        this.namedLogField = namedLogField;</span>
+<span class="fc" id="L61">        this.name = name;</span>
+<span class="fc" id="L62">    }</span>
+
+    public NamedLogField getNamedLogField() {
+<span class="fc" id="L65">        return namedLogField;</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L70">        return name;</span>
+    }
+
+    public static List&lt;LogMessageField&gt; getDefaultMapping(NamedLogField... supportedFields) {
+<span class="fc" id="L74">        return getDefaultMapping(true, supportedFields);</span>
+    }
+
+    public static List&lt;LogMessageField&gt; getDefaultMapping(boolean readFromDefaultsFile, NamedLogField... supportedFields) {
+
+<span class="fc" id="L79">        List&lt;LogMessageField&gt; result = new ArrayList&lt;LogMessageField&gt;();</span>
+<span class="fc" id="L80">        List&lt;NamedLogField&gt; supportedLogFields = Arrays.asList(supportedFields);</span>
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (readFromDefaultsFile) {</span>
+<span class="fc" id="L83">            InputStream is = null;</span>
+
+            try {
+<span class="fc" id="L86">                is = getStream();</span>
+
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">                if (is == null) {</span>
+<span class="nc" id="L89">                    verboseLog(&quot;No &quot; + DEFAULT_MAPPING + &quot; resource present, using defaults&quot;);</span>
+                } else {
+<span class="fc" id="L91">                    Properties p = new Properties();</span>
+<span class="fc" id="L92">                    p.load(is);</span>
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    if (!p.isEmpty()) {</span>
+<span class="fc" id="L95">                        loadFields(p, result, supportedLogFields);</span>
+                    }
+                }
+<span class="nc" id="L98">            } catch (IOException e) {</span>
+<span class="nc" id="L99">                verboseLog(&quot;Could not parse &quot; + DEFAULT_MAPPING + &quot; resource, using defaults: &quot; + e.getMessage());</span>
+            } finally {
+<span class="pc" id="L101">                Closer.close(is);</span>
+<span class="pc" id="L102">            }</span>
+        }
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (result.isEmpty()) {</span>
+
+<span class="fc" id="L107">            verboseLog(&quot;Default mapping is empty. Using &quot; + NamedLogField.class.getName() + &quot; fields&quot;);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            for (NamedLogField namedLogField : NamedLogField.values()) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                if (supportedLogFields.contains(namedLogField)) {</span>
+<span class="fc" id="L110">                    result.add(new LogMessageField(namedLogField.fieldName, namedLogField));</span>
+                }
+            }
+        }
+
+<span class="fc" id="L115">        verboseLog(&quot;Default field mapping: &quot; + result);</span>
+
+<span class="fc" id="L117">        return result;</span>
+    }
+
+    private static void verboseLog(String message) {
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (VERBOSE_LOGGING) {</span>
+<span class="nc" id="L122">            System.out.println(message);</span>
+        }
+<span class="fc" id="L124">    }</span>
+
+    private static void loadFields(Properties p, List&lt;LogMessageField&gt; result, List&lt;NamedLogField&gt; supportedLogFields) {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (Map.Entry&lt;Object, Object&gt; entry : p.entrySet()) {</span>
+
+<span class="fc" id="L129">            String targetName = entry.getKey().toString();</span>
+<span class="fc" id="L130">            String sourceFieldName = entry.getValue().toString();</span>
+
+<span class="fc" id="L132">            NamedLogField namedLogField = NamedLogField.byName(sourceFieldName);</span>
+<span class="pc bpc" id="L133" title="1 of 4 branches missed.">            if (namedLogField != null &amp;&amp; supportedLogFields.contains(namedLogField)) {</span>
+<span class="fc" id="L134">                result.add(new LogMessageField(targetName, namedLogField));</span>
+            }
+<span class="fc" id="L136">        }</span>
+<span class="fc" id="L137">    }</span>
+
+    private static InputStream getStream() {
+
+<span class="fc" id="L141">        Thread thread = Thread.currentThread();</span>
+<span class="fc" id="L142">        InputStream is = LogMessageField.class.getResourceAsStream(DEFAULT_MAPPING);</span>
+<span class="pc bpc" id="L143" title="2 of 4 branches missed.">        if (is == null &amp;&amp; thread.getContextClassLoader() != null) {</span>
+<span class="fc" id="L144">            is = thread.getContextClassLoader().getResourceAsStream(DEFAULT_MAPPING);</span>
+        }
+<span class="fc" id="L146">        return is;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L151">        final StringBuffer sb = new StringBuffer();</span>
+<span class="fc" id="L152">        sb.append(getClass().getSimpleName());</span>
+<span class="fc" id="L153">        sb.append(&quot; [name='&quot;).append(name).append('\'');</span>
+<span class="fc" id="L154">        sb.append(&quot;, namedLogField=&quot;).append(namedLogField);</span>
+<span class="fc" id="L155">        sb.append(']');</span>
+<span class="fc" id="L156">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AbstractNioSender.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">AbstractNioSender.java</span></div><h1>AbstractNioSender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
+
+import biz.paluch.logging.RuntimeContainerProperties;
+import biz.paluch.logging.gelf.intern.Closer;
+import biz.paluch.logging.gelf.intern.ErrorReporter;
+
+/**
+ * Base class for NIO-channel senders.
+ *
+ * @param &lt;T&gt; must by {@link AbstractSelectableChannel} and {@link ByteChannel}.
+ * @author Mark Paluch
+ * @since 1.11
+ */
+public abstract class AbstractNioSender&lt;T extends AbstractSelectableChannel &amp; ByteChannel&gt; implements ErrorReporter {
+
+    /**
+     * Buffer size for transmit buffers. Defaults to 99 * 8192
+     */
+    public static final String PROPERTY_BUFFER_SIZE = &quot;logstash-gelf.buffer.size&quot;;
+
+    /**
+     * Default initial buffer size {@code 40 x 8192}.
+     */
+<span class="fc" id="L31">    public static final int INITIAL_BUFFER_SIZE = Integer.parseInt(RuntimeContainerProperties.getProperty(PROPERTY_BUFFER_SIZE,</span>
+            &quot;&quot; + (40 * 8192)));
+
+    private T channel;
+<span class="fc" id="L35">    private volatile boolean shutdown = false;</span>
+    private final ErrorReporter errorReporter;
+    private final String host;
+    private final int port;
+
+<span class="fc" id="L40">    private final ThreadLocal&lt;ByteBuffer&gt; readBuffers = new ThreadLocal&lt;ByteBuffer&gt;() {</span>
+        @Override
+        protected ByteBuffer initialValue() {
+<span class="fc" id="L43">            return ByteBuffer.allocate(1);</span>
+        }
+    };
+
+    /**
+     * Create a new {@link AbstractNioSender} given {@link ErrorReporter}, {@code host} and {@code port}. Object creation
+     * triggers hostname lookup for early failure.
+     *
+     * @param errorReporter
+     * @param host
+     * @param port
+     * @throws UnknownHostException
+     */
+<span class="fc" id="L56">    protected AbstractNioSender(ErrorReporter errorReporter, String host, int port) throws UnknownHostException {</span>
+
+        // validate first address succeeds.
+<span class="fc" id="L59">        InetAddress.getByName(host);</span>
+<span class="fc" id="L60">        this.errorReporter = errorReporter;</span>
+<span class="fc" id="L61">        this.host = host;</span>
+<span class="fc" id="L62">        this.port = port;</span>
+
+<span class="fc" id="L64">    }</span>
+
+    protected boolean isConnected() throws IOException {
+
+<span class="fc" id="L68">        ByteBuffer byteBuffer = readBuffers.get();</span>
+<span class="fc" id="L69">        byteBuffer.clear();</span>
+
+<span class="fc" id="L71">        T channel = channel();</span>
+
+<span class="fc bfc" id="L73" title="All 6 branches covered.">        if (channel != null &amp;&amp; channel.isOpen() &amp;&amp; isConnected(channel)) {</span>
+
+            try {
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                return channel.read(byteBuffer) &gt;= 0;</span>
+<span class="nc" id="L77">            } catch (IOException e) {</span>
+<span class="nc" id="L78">                errorReporter.reportError(e.getMessage(), e);</span>
+            }
+        }
+
+<span class="fc" id="L82">        return false;</span>
+    }
+
+    protected abstract boolean isConnected(T channel);
+
+    protected T channel() {
+<span class="fc" id="L88">        return channel;</span>
+    }
+
+    public String getHost() {
+<span class="fc" id="L92">        return host;</span>
+    }
+
+    public int getPort() {
+<span class="fc" id="L96">        return port;</span>
+    }
+
+    public void close() {
+<span class="fc" id="L100">        shutdown = true;</span>
+<span class="fc" id="L101">        Closer.close(channel());</span>
+<span class="fc" id="L102">    }</span>
+
+    public boolean isShutdown() {
+<span class="fc" id="L105">        return shutdown;</span>
+    }
+
+    @Override
+    public void reportError(String message, Exception e) {
+<span class="fc" id="L110">        errorReporter.reportError(message, e);</span>
+<span class="fc" id="L111">    }</span>
+
+    public void setChannel(T channel) {
+<span class="fc" id="L114">        this.channel = channel;</span>
+<span class="fc" id="L115">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

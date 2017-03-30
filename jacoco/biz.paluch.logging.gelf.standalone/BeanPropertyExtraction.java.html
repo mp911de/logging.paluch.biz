@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>BeanPropertyExtraction.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.standalone</a> &gt; <span class="el_source">BeanPropertyExtraction.java</span></div><h1>BeanPropertyExtraction.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.standalone;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * @author Mark Paluch
+ * @since 31.07.14 08:56
+ */
+<span class="nc" id="L14">class BeanPropertyExtraction {</span>
+    public static final String IS_REGEX = &quot;is([^ ]+)&quot;;
+    public static final String GET_REGEX = &quot;get([^ ]+)&quot;;
+
+<span class="fc" id="L18">    public static final Pattern IS_PATTERN = Pattern.compile(IS_REGEX);</span>
+<span class="fc" id="L19">    public static final Pattern GET_PATTERN = Pattern.compile(GET_REGEX);</span>
+
+    static Map&lt;String, Object&gt; extractProperties(Object object) {
+
+<span class="fc" id="L23">        Map&lt;String, Method&gt; methodMap = createPropertyToMethodMap(object);</span>
+
+<span class="fc" id="L25">        Map&lt;String, Object&gt; fields = retrieveValues(object, methodMap);</span>
+<span class="fc" id="L26">        return fields;</span>
+    }
+
+    private static Map&lt;String, Method&gt; createPropertyToMethodMap(Object object) {
+<span class="fc" id="L30">        Class&lt;?&gt; beanClass = object.getClass();</span>
+<span class="fc" id="L31">        Map&lt;String, Method&gt; methodMap = new HashMap&lt;String, Method&gt;();</span>
+
+<span class="fc" id="L33">        Method[] methods = beanClass.getMethods();</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        for (Method method : methods) {</span>
+
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (method.getParameterTypes().length != 0) {</span>
+<span class="fc" id="L37">                continue;</span>
+            }
+
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">            if (method.getReturnType().equals(Void.class) || method.getReturnType().equals(Void.TYPE)) {</span>
+<span class="fc" id="L41">                continue;</span>
+            }
+
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            if (method.getDeclaringClass().equals(Object.class)) {</span>
+<span class="fc" id="L45">                continue;</span>
+            }
+
+<span class="fc" id="L48">            String name = method.getName();</span>
+<span class="fc" id="L49">            String propertyName = getPropertyName(name, GET_PATTERN);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if (propertyName == null) {</span>
+<span class="fc" id="L51">                propertyName = getPropertyName(name, IS_PATTERN);</span>
+            }
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (propertyName == null) {</span>
+<span class="nc" id="L55">                continue;</span>
+            }
+
+<span class="fc" id="L58">            propertyName = decapitalizePropertyName(propertyName);</span>
+
+<span class="fc" id="L60">            methodMap.put(propertyName, method);</span>
+        }
+<span class="fc" id="L62">        return methodMap;</span>
+    }
+
+    private static String decapitalizePropertyName(String propertyName) {
+<span class="fc" id="L66">        String first = propertyName.substring(0, 1);</span>
+<span class="fc" id="L67">        String last = propertyName.substring(1);</span>
+
+<span class="fc" id="L69">        return first.toLowerCase() + last;</span>
+
+    }
+
+    private static Map&lt;String, Object&gt; retrieveValues(Object object, Map&lt;String, Method&gt; methodMap) {
+<span class="fc" id="L74">        Map&lt;String, Object&gt; fields = new HashMap&lt;String, Object&gt;();</span>
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (Map.Entry&lt;String, Method&gt; entry : methodMap.entrySet()) {</span>
+            try {
+<span class="fc" id="L78">                Object value = entry.getValue().invoke(object);</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                if (value != null) {</span>
+<span class="fc" id="L81">                    fields.put(entry.getKey(), value);</span>
+                }
+
+<span class="nc" id="L84">            } catch (IllegalAccessException e) {</span>
+                // ignore
+<span class="nc" id="L86">            } catch (InvocationTargetException e) {</span>
+                // ignore
+<span class="pc" id="L88">            }</span>
+
+<span class="fc" id="L90">        }</span>
+<span class="fc" id="L91">        return fields;</span>
+    }
+
+    private static String getPropertyName(String name, Pattern pattern) {
+<span class="fc" id="L95">        Matcher matcher = pattern.matcher(name);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (matcher.matches()) {</span>
+<span class="fc" id="L97">            return matcher.toMatchResult().group(1);</span>
+        }
+<span class="fc" id="L99">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
