@@ -1,11 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfMessageAssembler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf</a> &gt; <span class="el_source">GelfMessageAssembler.java</span></div><h1>GelfMessageAssembler.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GelfMessageAssembler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf</a> &gt; <span class="el_source">GelfMessageAssembler.java</span></div><h1>GelfMessageAssembler.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf;
 
-import static biz.paluch.logging.gelf.GelfMessageBuilder.newInstance;
+import static biz.paluch.logging.gelf.GelfMessageBuilder.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import biz.paluch.logging.RuntimeContainer;
 import biz.paluch.logging.StackTraceFilter;
@@ -36,36 +41,36 @@ public class GelfMessageAssembler implements HostAndPortProvider {
     public static final String FIELD_STACK_TRACE = &quot;StackTrace&quot;;
 
     private String host;
-<span class="fc" id="L39">    private String version = GelfMessage.GELF_VERSION;</span>
+<span class="fc" id="L44">    private String version = GelfMessage.GELF_VERSION;</span>
     private String originHost;
     private int port;
     private String facility;
-<span class="fc" id="L43">    private boolean includeLogMessageParameters = true;</span>
-<span class="fc" id="L44">    private StackTraceExtraction stackTraceExtraction = StackTraceExtraction.OFF;</span>
-<span class="fc" id="L45">    private int maximumMessageSize = 8192;</span>
+<span class="fc" id="L48">    private boolean includeLogMessageParameters = true;</span>
+<span class="fc" id="L49">    private StackTraceExtraction stackTraceExtraction = StackTraceExtraction.OFF;</span>
+<span class="fc" id="L50">    private int maximumMessageSize = 8192;</span>
 
-<span class="fc" id="L47">    private List&lt;MessageField&gt; fields = new ArrayList&lt;MessageField&gt;();</span>
-<span class="fc" id="L48">    private Map&lt;String, String&gt; additionalFieldTypes = new HashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L52">    private List&lt;MessageField&gt; fields = new ArrayList&lt;MessageField&gt;();</span>
+<span class="fc" id="L53">    private Map&lt;String, String&gt; additionalFieldTypes = new HashMap&lt;String, String&gt;();</span>
 
-<span class="fc" id="L50">    private String timestampPattern = &quot;yyyy-MM-dd HH:mm:ss,SSSS&quot;;</span>
+<span class="fc" id="L55">    private String timestampPattern = &quot;yyyy-MM-dd HH:mm:ss,SSSS&quot;;</span>
 
     private final ThreadLocal&lt;PoolingGelfMessageBuilder&gt; builders;
 
-<span class="fc" id="L54">    public GelfMessageAssembler() {</span>
+<span class="fc" id="L59">    public GelfMessageAssembler() {</span>
 
-<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (PoolingGelfMessageBuilder.usePooling()) {</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (PoolingGelfMessageBuilder.usePooling()) {</span>
 
-<span class="fc" id="L58">            builders = new ThreadLocal&lt;PoolingGelfMessageBuilder&gt;() {</span>
+<span class="fc" id="L63">            builders = new ThreadLocal&lt;PoolingGelfMessageBuilder&gt;() {</span>
 
                 @Override
                 protected PoolingGelfMessageBuilder initialValue() {
-<span class="fc" id="L62">                    return PoolingGelfMessageBuilder.newInstance();</span>
+<span class="fc" id="L67">                    return PoolingGelfMessageBuilder.newInstance();</span>
                 }
             };
         } else {
-<span class="nc" id="L66">            builders = null;</span>
+<span class="nc" id="L71">            builders = null;</span>
         }
-<span class="fc" id="L68">    }</span>
+<span class="fc" id="L73">    }</span>
 
     /**
      * Initialize the {@link GelfMessageAssembler} from a property provider.
@@ -74,44 +79,44 @@ public class GelfMessageAssembler implements HostAndPortProvider {
      */
     public void initialize(PropertyProvider propertyProvider) {
 
-<span class="fc" id="L77">        host = propertyProvider.getProperty(PropertyProvider.PROPERTY_HOST);</span>
-<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (host == null) {</span>
-<span class="fc" id="L79">            host = propertyProvider.getProperty(PropertyProvider.PROPERTY_GRAYLOG_HOST);</span>
+<span class="fc" id="L82">        host = propertyProvider.getProperty(PropertyProvider.PROPERTY_HOST);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (host == null) {</span>
+<span class="fc" id="L84">            host = propertyProvider.getProperty(PropertyProvider.PROPERTY_GRAYLOG_HOST);</span>
         }
 
-<span class="fc" id="L82">        String port = propertyProvider.getProperty(PropertyProvider.PROPERTY_PORT);</span>
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (port == null) {</span>
-<span class="fc" id="L84">            port = propertyProvider.getProperty(PropertyProvider.PROPERTY_GRAYLOG_PORT);</span>
+<span class="fc" id="L87">        String port = propertyProvider.getProperty(PropertyProvider.PROPERTY_PORT);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (port == null) {</span>
+<span class="fc" id="L89">            port = propertyProvider.getProperty(PropertyProvider.PROPERTY_GRAYLOG_PORT);</span>
         }
 
-<span class="pc bpc" id="L87" title="1 of 4 branches missed.">        if (port != null &amp;&amp; !&quot;&quot;.equals(port)) {</span>
-<span class="fc" id="L88">            this.port = Integer.parseInt(port);</span>
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">        if (port != null &amp;&amp; !&quot;&quot;.equals(port)) {</span>
+<span class="fc" id="L93">            this.port = Integer.parseInt(port);</span>
         }
 
-<span class="fc" id="L91">        originHost = propertyProvider.getProperty(PropertyProvider.PROPERTY_ORIGIN_HOST);</span>
-<span class="fc" id="L92">        setExtractStackTrace(propertyProvider.getProperty(PropertyProvider.PROPERTY_EXTRACT_STACKTRACE));</span>
-<span class="fc" id="L93">        setFilterStackTrace(&quot;true&quot;.equalsIgnoreCase(propertyProvider.getProperty(PropertyProvider.PROPERTY_FILTER_STACK_TRACE)));</span>
+<span class="fc" id="L96">        originHost = propertyProvider.getProperty(PropertyProvider.PROPERTY_ORIGIN_HOST);</span>
+<span class="fc" id="L97">        setExtractStackTrace(propertyProvider.getProperty(PropertyProvider.PROPERTY_EXTRACT_STACKTRACE));</span>
+<span class="fc" id="L98">        setFilterStackTrace(&quot;true&quot;.equalsIgnoreCase(propertyProvider.getProperty(PropertyProvider.PROPERTY_FILTER_STACK_TRACE)));</span>
 
-<span class="fc" id="L95">        String includeLogMessageParameters = propertyProvider</span>
-<span class="fc" id="L96">                .getProperty(PropertyProvider.PROPERTY_INCLUDE_LOG_MESSAGE_PARAMETERS);</span>
-<span class="pc bpc" id="L97" title="1 of 4 branches missed.">        if (includeLogMessageParameters != null &amp;&amp; !includeLogMessageParameters.trim().equals(&quot;&quot;)) {</span>
-<span class="fc" id="L98">            setIncludeLogMessageParameters(&quot;true&quot;.equalsIgnoreCase(includeLogMessageParameters));</span>
+<span class="fc" id="L100">        String includeLogMessageParameters = propertyProvider</span>
+<span class="fc" id="L101">                .getProperty(PropertyProvider.PROPERTY_INCLUDE_LOG_MESSAGE_PARAMETERS);</span>
+<span class="pc bpc" id="L102" title="1 of 4 branches missed.">        if (includeLogMessageParameters != null &amp;&amp; !includeLogMessageParameters.trim().equals(&quot;&quot;)) {</span>
+<span class="fc" id="L103">            setIncludeLogMessageParameters(&quot;true&quot;.equalsIgnoreCase(includeLogMessageParameters));</span>
         }
 
-<span class="fc" id="L101">        setupStaticFields(propertyProvider);</span>
-<span class="fc" id="L102">        setupAdditionalFieldTypes(propertyProvider);</span>
-<span class="fc" id="L103">        facility = propertyProvider.getProperty(PropertyProvider.PROPERTY_FACILITY);</span>
-<span class="fc" id="L104">        String version = propertyProvider.getProperty(PropertyProvider.PROPERTY_VERSION);</span>
+<span class="fc" id="L106">        setupStaticFields(propertyProvider);</span>
+<span class="fc" id="L107">        setupAdditionalFieldTypes(propertyProvider);</span>
+<span class="fc" id="L108">        facility = propertyProvider.getProperty(PropertyProvider.PROPERTY_FACILITY);</span>
+<span class="fc" id="L109">        String version = propertyProvider.getProperty(PropertyProvider.PROPERTY_VERSION);</span>
 
-<span class="pc bpc" id="L106" title="1 of 4 branches missed.">        if (version != null &amp;&amp; !&quot;&quot;.equals(version)) {</span>
-<span class="fc" id="L107">            this.version = version;</span>
+<span class="pc bpc" id="L111" title="1 of 4 branches missed.">        if (version != null &amp;&amp; !&quot;&quot;.equals(version)) {</span>
+<span class="fc" id="L112">            this.version = version;</span>
         }
 
-<span class="fc" id="L110">        String messageSize = propertyProvider.getProperty(PropertyProvider.PROPERTY_MAX_MESSAGE_SIZE);</span>
-<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (messageSize != null) {</span>
-<span class="fc" id="L112">            maximumMessageSize = Integer.parseInt(messageSize);</span>
+<span class="fc" id="L115">        String messageSize = propertyProvider.getProperty(PropertyProvider.PROPERTY_MAX_MESSAGE_SIZE);</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (messageSize != null) {</span>
+<span class="fc" id="L117">            maximumMessageSize = Integer.parseInt(messageSize);</span>
         }
-<span class="fc" id="L114">    }</span>
+<span class="fc" id="L119">    }</span>
 
     /**
      * Produce a {@link GelfMessage}.
@@ -121,277 +126,277 @@ public class GelfMessageAssembler implements HostAndPortProvider {
      */
     public GelfMessage createGelfMessage(LogEvent logEvent) {
 
-<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        GelfMessageBuilder builder = builders != null ? builders.get().recycle() : newInstance();</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        GelfMessageBuilder builder = builders != null ? builders.get().recycle() : newInstance();</span>
 
-<span class="fc" id="L126">        Throwable throwable = logEvent.getThrowable();</span>
-<span class="fc" id="L127">        String message = logEvent.getMessage();</span>
+<span class="fc" id="L131">        Throwable throwable = logEvent.getThrowable();</span>
+<span class="fc" id="L132">        String message = logEvent.getMessage();</span>
 
-<span class="fc bfc" id="L129" title="All 4 branches covered.">        if (GelfMessage.isEmpty(message) &amp;&amp; throwable != null) {</span>
-<span class="fc" id="L130">            message = throwable.toString();</span>
+<span class="fc bfc" id="L134" title="All 4 branches covered.">        if (GelfMessage.isEmpty(message) &amp;&amp; throwable != null) {</span>
+<span class="fc" id="L135">            message = throwable.toString();</span>
         }
 
-<span class="fc" id="L133">        String shortMessage = message;</span>
-<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (message.length() &gt; MAX_SHORT_MESSAGE_LENGTH) {</span>
-<span class="nc" id="L135">            shortMessage = message.substring(0, MAX_SHORT_MESSAGE_LENGTH - 1);</span>
+<span class="fc" id="L138">        String shortMessage = message;</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (message.length() &gt; MAX_SHORT_MESSAGE_LENGTH) {</span>
+<span class="nc" id="L140">            shortMessage = message.substring(0, MAX_SHORT_MESSAGE_LENGTH - 1);</span>
         }
 
-<span class="fc" id="L138">        builder.withShortMessage(shortMessage).withFullMessage(message).withJavaTimestamp(logEvent.getLogTimestamp());</span>
-<span class="fc" id="L139">        builder.withLevel(logEvent.getSyslogLevel());</span>
-<span class="fc" id="L140">        builder.withVersion(getVersion());</span>
-<span class="fc" id="L141">        builder.withAdditionalFieldTypes(additionalFieldTypes);</span>
+<span class="fc" id="L143">        builder.withShortMessage(shortMessage).withFullMessage(message).withJavaTimestamp(logEvent.getLogTimestamp());</span>
+<span class="fc" id="L144">        builder.withLevel(logEvent.getSyslogLevel());</span>
+<span class="fc" id="L145">        builder.withVersion(getVersion());</span>
+<span class="fc" id="L146">        builder.withAdditionalFieldTypes(additionalFieldTypes);</span>
 
-<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (MessageField field : fields) {</span>
-<span class="fc" id="L144">            Values values = getValues(logEvent, field);</span>
-<span class="pc bpc" id="L145" title="1 of 4 branches missed.">            if (values == null || !values.hasValues()) {</span>
-<span class="fc" id="L146">                continue;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        for (MessageField field : fields) {</span>
+<span class="fc" id="L149">            Values values = getValues(logEvent, field);</span>
+<span class="pc bpc" id="L150" title="1 of 4 branches missed.">            if (values == null || !values.hasValues()) {</span>
+<span class="fc" id="L151">                continue;</span>
             }
 
-<span class="fc bfc" id="L149" title="All 2 branches covered.">            for (String entryName : values.getEntryNames()) {</span>
-<span class="fc" id="L150">                String value = values.getValue(entryName);</span>
-<span class="pc bpc" id="L151" title="1 of 2 branches missed.">                if (value == null) {</span>
-<span class="nc" id="L152">                    continue;</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            for (String entryName : values.getEntryNames()) {</span>
+<span class="fc" id="L155">                String value = values.getValue(entryName);</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">                if (value == null) {</span>
+<span class="nc" id="L157">                    continue;</span>
 
                 }
-<span class="fc" id="L155">                builder.withField(entryName, value);</span>
-<span class="fc" id="L156">            }</span>
-<span class="fc" id="L157">        }</span>
+<span class="fc" id="L160">                builder.withField(entryName, value);</span>
+<span class="fc" id="L161">            }</span>
+<span class="fc" id="L162">        }</span>
 
-<span class="fc bfc" id="L159" title="All 4 branches covered.">        if (stackTraceExtraction.isEnabled() &amp;&amp; throwable != null) {</span>
-<span class="fc" id="L160">            addStackTrace(throwable, builder);</span>
+<span class="fc bfc" id="L164" title="All 4 branches covered.">        if (stackTraceExtraction.isEnabled() &amp;&amp; throwable != null) {</span>
+<span class="fc" id="L165">            addStackTrace(throwable, builder);</span>
         }
 
-<span class="fc bfc" id="L163" title="All 4 branches covered.">        if (includeLogMessageParameters &amp;&amp; logEvent.getParameters() != null) {</span>
-<span class="fc bfc" id="L164" title="All 2 branches covered.">            for (int i = 0; i &lt; logEvent.getParameters().length; i++) {</span>
-<span class="fc" id="L165">                Object param = logEvent.getParameters()[i];</span>
-<span class="fc" id="L166">                builder.withField(FIELD_MESSAGE_PARAM + i, &quot;&quot; + param);</span>
+<span class="fc bfc" id="L168" title="All 4 branches covered.">        if (includeLogMessageParameters &amp;&amp; logEvent.getParameters() != null) {</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            for (int i = 0; i &lt; logEvent.getParameters().length; i++) {</span>
+<span class="fc" id="L170">                Object param = logEvent.getParameters()[i];</span>
+<span class="fc" id="L171">                builder.withField(FIELD_MESSAGE_PARAM + i, &quot;&quot; + param);</span>
             }
         }
 
-<span class="fc" id="L170">        builder.withHost(getOriginHost());</span>
+<span class="fc" id="L175">        builder.withHost(getOriginHost());</span>
 
-<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (null != facility) {</span>
-<span class="fc" id="L173">            builder.withFacility(facility);</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (null != facility) {</span>
+<span class="fc" id="L178">            builder.withFacility(facility);</span>
         }
 
-<span class="fc" id="L176">        builder.withMaximumMessageSize(maximumMessageSize);</span>
-<span class="fc" id="L177">        return builder.build();</span>
+<span class="fc" id="L181">        builder.withMaximumMessageSize(maximumMessageSize);</span>
+<span class="fc" id="L182">        return builder.build();</span>
     }
 
     private Values getValues(LogEvent logEvent, MessageField field) {
 
-<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (field instanceof StaticMessageField) {</span>
-<span class="fc" id="L183">            return new Values(field.getName(), getValue((StaticMessageField) field));</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (field instanceof StaticMessageField) {</span>
+<span class="fc" id="L188">            return new Values(field.getName(), getValue((StaticMessageField) field));</span>
         }
 
-<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (field instanceof LogMessageField) {</span>
-<span class="fc" id="L187">            LogMessageField logMessageField = (LogMessageField) field;</span>
-<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (logMessageField.getNamedLogField() == LogMessageField.NamedLogField.Time) {</span>
-<span class="fc" id="L189">                SimpleDateFormat dateFormat = new SimpleDateFormat(timestampPattern);</span>
-<span class="fc" id="L190">                return new Values(field.getName(), dateFormat.format(new Date(logEvent.getLogTimestamp())));</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (field instanceof LogMessageField) {</span>
+<span class="fc" id="L192">            LogMessageField logMessageField = (LogMessageField) field;</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">            if (logMessageField.getNamedLogField() == LogMessageField.NamedLogField.Time) {</span>
+<span class="fc" id="L194">                SimpleDateFormat dateFormat = new SimpleDateFormat(timestampPattern);</span>
+<span class="fc" id="L195">                return new Values(field.getName(), dateFormat.format(new Date(logEvent.getLogTimestamp())));</span>
             }
 
-<span class="fc bfc" id="L193" title="All 2 branches covered.">            if (logMessageField.getNamedLogField() == LogMessageField.NamedLogField.Server) {</span>
-<span class="fc" id="L194">                return new Values(field.getName(), getOriginHost());</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">            if (logMessageField.getNamedLogField() == LogMessageField.NamedLogField.Server) {</span>
+<span class="fc" id="L199">                return new Values(field.getName(), getOriginHost());</span>
             }
         }
 
-<span class="fc" id="L198">        return logEvent.getValues(field);</span>
+<span class="fc" id="L203">        return logEvent.getValues(field);</span>
     }
 
     private String getValue(StaticMessageField field) {
-<span class="fc" id="L202">        return field.getValue();</span>
+<span class="fc" id="L207">        return field.getValue();</span>
     }
 
     private void addStackTrace(Throwable thrown, GelfMessageBuilder builder) {
-<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (stackTraceExtraction.isFilter()) {</span>
-<span class="fc" id="L207">            builder.withField(FIELD_STACK_TRACE, StackTraceFilter.getFilteredStackTrace(thrown, stackTraceExtraction.getRef()));</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (stackTraceExtraction.isFilter()) {</span>
+<span class="fc" id="L212">            builder.withField(FIELD_STACK_TRACE, StackTraceFilter.getFilteredStackTrace(thrown, stackTraceExtraction.getRef()));</span>
         } else {
-<span class="fc" id="L209">            final StringWriter sw = new StringWriter();</span>
-<span class="fc" id="L210">            StackTraceFilter.getThrowable(thrown, stackTraceExtraction.getRef()).printStackTrace(new PrintWriter(sw));</span>
-<span class="fc" id="L211">            builder.withField(FIELD_STACK_TRACE, sw.toString());</span>
+<span class="fc" id="L214">            final StringWriter sw = new StringWriter();</span>
+<span class="fc" id="L215">            StackTraceFilter.getThrowable(thrown, stackTraceExtraction.getRef()).printStackTrace(new PrintWriter(sw));</span>
+<span class="fc" id="L216">            builder.withField(FIELD_STACK_TRACE, sw.toString());</span>
         }
-<span class="fc" id="L213">    }</span>
+<span class="fc" id="L218">    }</span>
 
     private void setupStaticFields(PropertyProvider propertyProvider) {
-<span class="fc" id="L216">        int fieldNumber = 0;</span>
+<span class="fc" id="L221">        int fieldNumber = 0;</span>
         while (true) {
-<span class="fc" id="L218">            final String property = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELD + fieldNumber);</span>
-<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (null == property) {</span>
-<span class="fc" id="L220">                break;</span>
+<span class="fc" id="L223">            final String property = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELD + fieldNumber);</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            if (null == property) {</span>
+<span class="fc" id="L225">                break;</span>
             }
-<span class="fc" id="L222">            final int index = property.indexOf('=');</span>
-<span class="pc bpc" id="L223" title="1 of 2 branches missed.">            if (-1 != index) {</span>
+<span class="fc" id="L227">            final int index = property.indexOf('=');</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            if (-1 != index) {</span>
 
-<span class="fc" id="L225">                StaticMessageField field = new StaticMessageField(property.substring(0, index), property.substring(index + 1));</span>
-<span class="fc" id="L226">                addField(field);</span>
+<span class="fc" id="L230">                StaticMessageField field = new StaticMessageField(property.substring(0, index), property.substring(index + 1));</span>
+<span class="fc" id="L231">                addField(field);</span>
             }
 
-<span class="fc" id="L229">            fieldNumber++;</span>
-<span class="fc" id="L230">        }</span>
-<span class="fc" id="L231">    }</span>
+<span class="fc" id="L234">            fieldNumber++;</span>
+<span class="fc" id="L235">        }</span>
+<span class="fc" id="L236">    }</span>
 
     private void setupAdditionalFieldTypes(PropertyProvider propertyProvider) {
-<span class="fc" id="L234">        int fieldNumber = 0;</span>
+<span class="fc" id="L239">        int fieldNumber = 0;</span>
         while (true) {
-<span class="fc" id="L236">            final String property = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELD_TYPE + fieldNumber);</span>
-<span class="pc bpc" id="L237" title="1 of 2 branches missed.">            if (null == property) {</span>
-<span class="fc" id="L238">                break;</span>
+<span class="fc" id="L241">            final String property = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELD_TYPE + fieldNumber);</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">            if (null == property) {</span>
+<span class="fc" id="L243">                break;</span>
             }
-<span class="nc" id="L240">            final int index = property.indexOf('=');</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">            if (-1 != index) {</span>
+<span class="nc" id="L245">            final int index = property.indexOf('=');</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (-1 != index) {</span>
 
-<span class="nc" id="L243">                String field = property.substring(0, index);</span>
-<span class="nc" id="L244">                String type = property.substring(index + 1);</span>
-<span class="nc" id="L245">                setAdditionalFieldType(field, type);</span>
+<span class="nc" id="L248">                String field = property.substring(0, index);</span>
+<span class="nc" id="L249">                String type = property.substring(index + 1);</span>
+<span class="nc" id="L250">                setAdditionalFieldType(field, type);</span>
             }
 
-<span class="nc" id="L248">            fieldNumber++;</span>
-<span class="nc" id="L249">        }</span>
-<span class="fc" id="L250">    }</span>
+<span class="nc" id="L253">            fieldNumber++;</span>
+<span class="nc" id="L254">        }</span>
+<span class="fc" id="L255">    }</span>
 
     public void setAdditionalFieldType(String field, String type) {
-<span class="fc" id="L253">        additionalFieldTypes.put(field, type);</span>
-<span class="fc" id="L254">    }</span>
+<span class="fc" id="L258">        additionalFieldTypes.put(field, type);</span>
+<span class="fc" id="L259">    }</span>
 
     public void addField(MessageField field) {
-<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (!fields.contains(field)) {</span>
-<span class="fc" id="L258">            this.fields.add(field);</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        if (!fields.contains(field)) {</span>
+<span class="fc" id="L263">            this.fields.add(field);</span>
         }
-<span class="fc" id="L260">    }</span>
+<span class="fc" id="L265">    }</span>
 
     public void addFields(Collection&lt;? extends MessageField&gt; fields) {
-<span class="fc" id="L263">        this.fields.addAll(fields);</span>
-<span class="fc" id="L264">    }</span>
+<span class="fc" id="L268">        this.fields.addAll(fields);</span>
+<span class="fc" id="L269">    }</span>
 
     public String getHost() {
-<span class="fc" id="L267">        return host;</span>
+<span class="fc" id="L272">        return host;</span>
     }
 
     public void setHost(String host) {
-<span class="fc" id="L271">        this.host = host;</span>
-<span class="fc" id="L272">    }</span>
+<span class="fc" id="L276">        this.host = host;</span>
+<span class="fc" id="L277">    }</span>
 
     public String getOriginHost() {
-<span class="fc bfc" id="L275" title="All 2 branches covered.">        if (null == originHost) {</span>
-<span class="fc" id="L276">            originHost = RuntimeContainer.FQDN_HOSTNAME;</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        if (null == originHost) {</span>
+<span class="fc" id="L281">            originHost = RuntimeContainer.FQDN_HOSTNAME;</span>
         }
-<span class="fc" id="L278">        return originHost;</span>
+<span class="fc" id="L283">        return originHost;</span>
     }
 
     public void setOriginHost(String originHost) {
-<span class="fc" id="L282">        this.originHost = originHost;</span>
-<span class="fc" id="L283">    }</span>
+<span class="fc" id="L287">        this.originHost = originHost;</span>
+<span class="fc" id="L288">    }</span>
 
     public int getPort() {
-<span class="fc" id="L286">        return port;</span>
+<span class="fc" id="L291">        return port;</span>
     }
 
     public void setPort(int port) {
-<span class="pc bpc" id="L290" title="1 of 4 branches missed.">        if (port &gt; MAX_PORT_NUMBER || port &lt; 1) {</span>
-<span class="fc" id="L291">            throw new IllegalArgumentException(&quot;Invalid port number: &quot; + port + &quot;, supported range: 1-&quot; + MAX_PORT_NUMBER);</span>
+<span class="pc bpc" id="L295" title="1 of 4 branches missed.">        if (port &gt; MAX_PORT_NUMBER || port &lt; 1) {</span>
+<span class="fc" id="L296">            throw new IllegalArgumentException(&quot;Invalid port number: &quot; + port + &quot;, supported range: 1-&quot; + MAX_PORT_NUMBER);</span>
         }
-<span class="fc" id="L293">        this.port = port;</span>
-<span class="fc" id="L294">    }</span>
+<span class="fc" id="L298">        this.port = port;</span>
+<span class="fc" id="L299">    }</span>
 
     public String getFacility() {
-<span class="fc" id="L297">        return facility;</span>
+<span class="fc" id="L302">        return facility;</span>
     }
 
     public void setFacility(String facility) {
-<span class="fc" id="L301">        this.facility = facility;</span>
-<span class="fc" id="L302">    }</span>
+<span class="fc" id="L306">        this.facility = facility;</span>
+<span class="fc" id="L307">    }</span>
 
     public boolean isExtractStackTrace() {
-<span class="nc" id="L305">        return stackTraceExtraction.isEnabled();</span>
+<span class="nc" id="L310">        return stackTraceExtraction.isEnabled();</span>
     }
 
     public String getExtractStackTrace() {
 
-<span class="pc bpc" id="L310" title="1 of 2 branches missed.">        if (stackTraceExtraction.isEnabled()) {</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">        if (stackTraceExtraction.isEnabled()) {</span>
 
-<span class="pc bpc" id="L312" title="1 of 2 branches missed.">            if (stackTraceExtraction.getRef() == 0) {</span>
-<span class="fc" id="L313">                return &quot;true&quot;;</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">            if (stackTraceExtraction.getRef() == 0) {</span>
+<span class="fc" id="L318">                return &quot;true&quot;;</span>
             }
-<span class="nc" id="L315">            return Integer.toString(stackTraceExtraction.getRef());</span>
+<span class="nc" id="L320">            return Integer.toString(stackTraceExtraction.getRef());</span>
         }
 
-<span class="nc" id="L318">        return &quot;false&quot;;</span>
+<span class="nc" id="L323">        return &quot;false&quot;;</span>
     }
 
     public void setExtractStackTrace(boolean extractStackTrace) {
-<span class="nc" id="L322">        this.stackTraceExtraction = stackTraceExtraction.applyExtaction(&quot;&quot; + extractStackTrace);</span>
-<span class="nc" id="L323">    }</span>
+<span class="nc" id="L327">        this.stackTraceExtraction = stackTraceExtraction.applyExtaction(&quot;&quot; + extractStackTrace);</span>
+<span class="nc" id="L328">    }</span>
 
     public void setExtractStackTrace(String value) {
-<span class="fc" id="L326">        this.stackTraceExtraction = stackTraceExtraction.applyExtaction(value);</span>
-<span class="fc" id="L327">    }</span>
+<span class="fc" id="L331">        this.stackTraceExtraction = stackTraceExtraction.applyExtaction(value);</span>
+<span class="fc" id="L332">    }</span>
 
     public boolean isFilterStackTrace() {
-<span class="fc" id="L330">        return stackTraceExtraction.isEnabled();</span>
+<span class="fc" id="L335">        return stackTraceExtraction.isEnabled();</span>
     }
 
     public void setFilterStackTrace(boolean filterStackTrace) {
-<span class="fc" id="L334">        this.stackTraceExtraction = stackTraceExtraction.applyFilter(filterStackTrace);</span>
-<span class="fc" id="L335">    }</span>
+<span class="fc" id="L339">        this.stackTraceExtraction = stackTraceExtraction.applyFilter(filterStackTrace);</span>
+<span class="fc" id="L340">    }</span>
 
     public boolean isIncludeLogMessageParameters() {
-<span class="nc" id="L338">        return includeLogMessageParameters;</span>
+<span class="nc" id="L343">        return includeLogMessageParameters;</span>
     }
 
     public void setIncludeLogMessageParameters(boolean includeLogMessageParameters) {
-<span class="fc" id="L342">        this.includeLogMessageParameters = includeLogMessageParameters;</span>
-<span class="fc" id="L343">    }</span>
+<span class="fc" id="L347">        this.includeLogMessageParameters = includeLogMessageParameters;</span>
+<span class="fc" id="L348">    }</span>
 
     public String getTimestampPattern() {
-<span class="fc" id="L346">        return timestampPattern;</span>
+<span class="fc" id="L351">        return timestampPattern;</span>
     }
 
     public void setTimestampPattern(String timestampPattern) {
-<span class="fc" id="L350">        this.timestampPattern = timestampPattern;</span>
-<span class="fc" id="L351">    }</span>
+<span class="fc" id="L355">        this.timestampPattern = timestampPattern;</span>
+<span class="fc" id="L356">    }</span>
 
     public int getMaximumMessageSize() {
-<span class="fc" id="L354">        return maximumMessageSize;</span>
+<span class="fc" id="L359">        return maximumMessageSize;</span>
     }
 
     public void setMaximumMessageSize(int maximumMessageSize) {
 
-<span class="pc bpc" id="L359" title="1 of 4 branches missed.">        if (maximumMessageSize &gt; MAX_MESSAGE_SIZE || maximumMessageSize &lt; 1) {</span>
-<span class="fc" id="L360">            throw new IllegalArgumentException(&quot;Invalid maximum message size: &quot; + maximumMessageSize + &quot;, supported range: 1-&quot;</span>
-                    + MAX_MESSAGE_SIZE);
+<span class="pc bpc" id="L364" title="1 of 4 branches missed.">        if (maximumMessageSize &gt; MAX_MESSAGE_SIZE || maximumMessageSize &lt; 1) {</span>
+<span class="fc" id="L365">            throw new IllegalArgumentException(</span>
+                    &quot;Invalid maximum message size: &quot; + maximumMessageSize + &quot;, supported range: 1-&quot; + MAX_MESSAGE_SIZE);
         }
 
-<span class="fc" id="L364">        this.maximumMessageSize = maximumMessageSize;</span>
-<span class="fc" id="L365">    }</span>
+<span class="fc" id="L369">        this.maximumMessageSize = maximumMessageSize;</span>
+<span class="fc" id="L370">    }</span>
 
     public String getVersion() {
-<span class="fc" id="L368">        return version;</span>
+<span class="fc" id="L373">        return version;</span>
     }
 
     public void setVersion(String version) {
 
-<span class="pc bpc" id="L373" title="1 of 4 branches missed.">        if (!GelfMessage.GELF_VERSION_1_0.equals(version) &amp;&amp; !GelfMessage.GELF_VERSION_1_1.equals(version)) {</span>
-<span class="fc" id="L374">            throw new IllegalArgumentException(&quot;Invalid GELF version: &quot; + version + &quot;, supported range: &quot;</span>
+<span class="pc bpc" id="L378" title="1 of 4 branches missed.">        if (!GelfMessage.GELF_VERSION_1_0.equals(version) &amp;&amp; !GelfMessage.GELF_VERSION_1_1.equals(version)) {</span>
+<span class="fc" id="L379">            throw new IllegalArgumentException(&quot;Invalid GELF version: &quot; + version + &quot;, supported range: &quot;</span>
                     + GelfMessage.GELF_VERSION_1_0 + &quot;, &quot; + GelfMessage.GELF_VERSION_1_1);
         }
 
-<span class="fc" id="L378">        this.version = version;</span>
-<span class="fc" id="L379">    }</span>
+<span class="fc" id="L383">        this.version = version;</span>
+<span class="fc" id="L384">    }</span>
 
     static class StackTraceExtraction {
 
-<span class="fc" id="L383">        private static final StackTraceExtraction OFF = new StackTraceExtraction(false, false, 0);</span>
-<span class="fc" id="L384">        private static final StackTraceExtraction ON = new StackTraceExtraction(true, false, 0);</span>
-<span class="fc" id="L385">        private static final StackTraceExtraction FILTERED = new StackTraceExtraction(true, true, 0);</span>
+<span class="fc" id="L388">        private static final StackTraceExtraction OFF = new StackTraceExtraction(false, false, 0);</span>
+<span class="fc" id="L389">        private static final StackTraceExtraction ON = new StackTraceExtraction(true, false, 0);</span>
+<span class="fc" id="L390">        private static final StackTraceExtraction FILTERED = new StackTraceExtraction(true, true, 0);</span>
         private final boolean enabled;
         private final boolean filter;
         private final int ref;
 
-<span class="fc" id="L390">        private StackTraceExtraction(boolean enabled, boolean filter, int ref) {</span>
-<span class="fc" id="L391">            this.enabled = enabled;</span>
-<span class="fc" id="L392">            this.filter = filter;</span>
-<span class="fc" id="L393">            this.ref = ref;</span>
-<span class="fc" id="L394">        }</span>
+<span class="fc" id="L395">        private StackTraceExtraction(boolean enabled, boolean filter, int ref) {</span>
+<span class="fc" id="L396">            this.enabled = enabled;</span>
+<span class="fc" id="L397">            this.filter = filter;</span>
+<span class="fc" id="L398">            this.ref = ref;</span>
+<span class="fc" id="L399">        }</span>
 
         /**
          * Parse the stack trace filtering value.
@@ -401,45 +406,45 @@ public class GelfMessageAssembler implements HostAndPortProvider {
          */
         public static StackTraceExtraction from(String value, boolean filter) {
 
-<span class="fc bfc" id="L404" title="All 2 branches covered.">            if (value == null) {</span>
-<span class="fc" id="L405">                return OFF;</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L410">                return OFF;</span>
             }
 
-<span class="fc" id="L408">            boolean enabled = Boolean.parseBoolean(value);</span>
+<span class="fc" id="L413">            boolean enabled = Boolean.parseBoolean(value);</span>
 
-<span class="fc" id="L410">            int ref = 0;</span>
-<span class="pc bpc" id="L411" title="2 of 4 branches missed.">            if (!value.equalsIgnoreCase(&quot;false&quot;) &amp;&amp; !value.trim().isEmpty()) {</span>
+<span class="fc" id="L415">            int ref = 0;</span>
+<span class="pc bpc" id="L416" title="2 of 4 branches missed.">            if (!value.equalsIgnoreCase(&quot;false&quot;) &amp;&amp; !value.trim().isEmpty()) {</span>
                 try {
-<span class="fc" id="L413">                    ref = Integer.parseInt(value);</span>
-<span class="fc" id="L414">                    enabled = true;</span>
-<span class="fc" id="L415">                } catch (NumberFormatException e) {</span>
-<span class="fc" id="L416">                    ref = 0;</span>
-<span class="fc" id="L417">                }</span>
+<span class="fc" id="L418">                    ref = Integer.parseInt(value);</span>
+<span class="fc" id="L419">                    enabled = true;</span>
+<span class="fc" id="L420">                } catch (NumberFormatException e) {</span>
+<span class="fc" id="L421">                    ref = 0;</span>
+<span class="fc" id="L422">                }</span>
             }
 
-<span class="fc" id="L420">            return new StackTraceExtraction(enabled, filter, ref);</span>
+<span class="fc" id="L425">            return new StackTraceExtraction(enabled, filter, ref);</span>
         }
 
         public StackTraceExtraction applyExtaction(String value) {
 
-<span class="fc" id="L425">            StackTraceExtraction parsed = from(value, isFilter());</span>
-<span class="fc" id="L426">            return new StackTraceExtraction(parsed.isEnabled(), parsed.isFilter(), parsed.getRef());</span>
+<span class="fc" id="L430">            StackTraceExtraction parsed = from(value, isFilter());</span>
+<span class="fc" id="L431">            return new StackTraceExtraction(parsed.isEnabled(), parsed.isFilter(), parsed.getRef());</span>
         }
 
         public StackTraceExtraction applyFilter(boolean filterStackTrace) {
-<span class="fc" id="L430">            return new StackTraceExtraction(isEnabled(), filterStackTrace, getRef());</span>
+<span class="fc" id="L435">            return new StackTraceExtraction(isEnabled(), filterStackTrace, getRef());</span>
         }
 
         public boolean isEnabled() {
-<span class="fc" id="L434">            return enabled;</span>
+<span class="fc" id="L439">            return enabled;</span>
         }
 
         public boolean isFilter() {
-<span class="fc" id="L438">            return filter;</span>
+<span class="fc" id="L443">            return filter;</span>
         }
 
         public int getRef() {
-<span class="fc" id="L442">            return ref;</span>
+<span class="fc" id="L447">            return ref;</span>
         }
     }
 }
