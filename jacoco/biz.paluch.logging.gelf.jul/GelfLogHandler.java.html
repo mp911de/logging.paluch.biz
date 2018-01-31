@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GelfLogHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.jul</a> &gt; <span class="el_source">GelfLogHandler.java</span></div><h1>GelfLogHandler.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.jul;
+
+import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.*;
+
+import java.util.Collections;
+import java.util.logging.*;
+
+import biz.paluch.logging.RuntimeContainer;
+import biz.paluch.logging.gelf.GelfMessageAssembler;
+import biz.paluch.logging.gelf.LogMessageField;
+import biz.paluch.logging.gelf.PropertyProvider;
+import biz.paluch.logging.gelf.intern.*;
+
+/**
+ * Logging-Handler for GELF (Graylog Extended Logging Format). This Java-Util-Logging Handler creates GELF Messages and posts
+ * them using UDP (default) or TCP. Following parameters are supported/needed:
+ * &lt;ul&gt;
+ * &lt;li&gt;host (Mandatory): Hostname/IP-Address of the Logstash Host
+ * &lt;ul&gt;
+ * &lt;li&gt;(the host) for UDP, e.g. 127.0.0.1 or some.host.com&lt;/li&gt;
+ * &lt;li&gt;See docs for more details&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;li&gt;port (Optional): Port, default 12201&lt;/li&gt;
+ * &lt;li&gt;version (Optional): GELF Version 1.0 or 1.1, default 1.0&lt;/li&gt;
+ * &lt;li&gt;originHost (Optional): Originating Hostname, default FQDN Hostname&lt;/li&gt;
+ * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 =
+ * throwable.cause, -1 = root cause]), default false&lt;/li&gt;
+ * &lt;li&gt;filterStackTrace (Optional): Perform Stack-Trace filtering (true/false), default false&lt;/li&gt;
+ * &lt;li&gt;includeLogMessageParameters (Optional): Include message parameters from the log event (see
+ * {@link LogRecord#getParameters()}, default true&lt;/li&gt;
+ * &lt;li&gt;mdcProfiling (Optional): Perform Profiling (Call-Duration) based on MDC Data. See &lt;a href=&quot;#mdcProfiling&quot;&gt;MDC
+ * Profiling&lt;/a&gt;, default false&lt;/li&gt;
+ * &lt;li&gt;facility (Optional): Name of the Facility, default gelf-java&lt;/li&gt;
+ * &lt;li&gt;level (Optional): Log-Level, default INFO&lt;/li&gt;
+ * &lt;li&gt;filter (Optional): Class-Name of a Log-Filter, default none&lt;/li&gt;
+ * &lt;li&gt;additionalField.(number) (Optional): Post additional fields. Eg. .GelfLogHandler.additionalField.0=fieldName=Value&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * The {@link #publish(LogRecord)} method is thread-safe and may be called by different threads at any time.
+ *
+ * @author Mark Paluch
+ */
+public class GelfLogHandler extends Handler implements ErrorReporter {
+
+    protected volatile GelfSender gelfSender;
+    protected GelfMessageAssembler gelfMessageAssembler;
+<span class="fc" id="L48">    private final ErrorReporter errorReporter = new MessagePostprocessingErrorReporter(this);</span>
+
+    public GelfLogHandler() {
+<span class="fc" id="L51">        super();</span>
+
+<span class="fc" id="L53">        RuntimeContainer.initialize(errorReporter);</span>
+<span class="fc" id="L54">        gelfMessageAssembler = createGelfMessageAssembler();</span>
+
+<span class="fc" id="L56">        initializeDefaultFields();</span>
+
+<span class="fc" id="L58">        JulPropertyProvider propertyProvider = new JulPropertyProvider(GelfLogHandler.class);</span>
+<span class="fc" id="L59">        gelfMessageAssembler.initialize(propertyProvider);</span>
+
+<span class="fc" id="L61">        String level = propertyProvider.getProperty(PropertyProvider.PROPERTY_LEVEL);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (null != level) {</span>
+<span class="fc" id="L63">            setLevel(Level.parse(level.trim()));</span>
+        } else {
+<span class="fc" id="L65">            setLevel(Level.INFO);</span>
+        }
+
+<span class="fc" id="L68">        String additionalFields = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELDS);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (null != additionalFields) {</span>
+<span class="fc" id="L70">            setAdditionalFields(additionalFields);</span>
+        }
+
+<span class="fc" id="L73">        String additionalFieldTypes = propertyProvider.getProperty(PropertyProvider.PROPERTY_ADDITIONAL_FIELD_TYPES);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (null != additionalFieldTypes) {</span>
+<span class="nc" id="L75">            setAdditionalFieldTypes(additionalFieldTypes);</span>
+        }
+
+<span class="fc" id="L78">        String filter = propertyProvider.getProperty(PropertyProvider.PROPERTY_FILTER);</span>
+        try {
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (null != filter) {</span>
+<span class="fc" id="L81">                final Class clazz = ClassLoader.getSystemClassLoader().loadClass(filter);</span>
+<span class="fc" id="L82">                setFilter((Filter) clazz.newInstance());</span>
+            }
+<span class="nc" id="L84">        } catch (final Exception e) {</span>
+            // ignore
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">    }</span>
+
+    protected void initializeDefaultFields() {
+<span class="fc" id="L90">        gelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(Time, Severity, ThreadName, SourceClassName,</span>
+                SourceMethodName, SourceSimpleClassName, LoggerName));
+<span class="fc" id="L92">    }</span>
+
+    protected GelfMessageAssembler createGelfMessageAssembler() {
+<span class="fc" id="L95">        return new GelfMessageAssembler();</span>
+    }
+
+    @Override
+    public void flush() {
+<span class="fc" id="L100">    }</span>
+
+    @Override
+    public void publish(final LogRecord record) {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (!isLoggable(record)) {</span>
+<span class="fc" id="L105">            return;</span>
+        }
+
+        try {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (null == gelfSender) {</span>
+<span class="fc" id="L110">                synchronized (this) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                    if (null == gelfSender) {</span>
+<span class="fc" id="L112">                        gelfSender = createGelfSender();</span>
+                    }
+<span class="fc" id="L114">                }</span>
+            }
+<span class="fc" id="L116">        } catch (Exception e) {</span>
+<span class="fc" id="L117">            reportError(&quot;Could not send GELF message: &quot; + e.getMessage(), e, ErrorManager.OPEN_FAILURE);</span>
+<span class="fc" id="L118">            return;</span>
+<span class="fc" id="L119">        }</span>
+
+        try {
+<span class="fc" id="L122">            GelfMessage message = createGelfMessage(record);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            if (!message.isValid()) {</span>
+<span class="fc" id="L124">                reportError(&quot;GELF Message is invalid: &quot; + message.toJson(), null, ErrorManager.WRITE_FAILURE);</span>
+<span class="fc" id="L125">                return;</span>
+            }
+
+<span class="pc bpc" id="L128" title="1 of 4 branches missed.">            if (null == gelfSender || !gelfSender.sendMessage(message)) {</span>
+<span class="fc" id="L129">                reportError(&quot;Could not send GELF message&quot;, null, ErrorManager.WRITE_FAILURE);</span>
+            }
+<span class="nc" id="L131">        } catch (Exception e) {</span>
+<span class="nc" id="L132">            reportError(&quot;Could not send GELF message: &quot; + e.getMessage(), e, ErrorManager.FORMAT_FAILURE);</span>
+<span class="fc" id="L133">        }</span>
+<span class="fc" id="L134">    }</span>
+
+    protected GelfSender createGelfSender() {
+<span class="fc" id="L137">        return GelfSenderFactory.createSender(gelfMessageAssembler, errorReporter, Collections.EMPTY_MAP);</span>
+    }
+
+    @Override
+    public void reportError(String message, Exception e) {
+<span class="fc" id="L142">        reportError(message, e, ErrorManager.GENERIC_FAILURE);</span>
+<span class="fc" id="L143">    }</span>
+
+    @Override
+    public void close() {
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (null != gelfSender) {</span>
+<span class="fc" id="L148">            Closer.close(gelfSender);</span>
+<span class="fc" id="L149">            gelfSender = null;</span>
+        }
+<span class="fc" id="L151">    }</span>
+
+    protected GelfMessage createGelfMessage(final LogRecord record) {
+<span class="fc" id="L154">        return gelfMessageAssembler.createGelfMessage(new JulLogEvent(record));</span>
+    }
+
+    public void setAdditionalFields(String spec) {
+<span class="fc" id="L158">        ConfigurationSupport.setAdditionalFields(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L159">    }</span>
+
+    public void setAdditionalFieldTypes(String spec) {
+<span class="fc" id="L162">        ConfigurationSupport.setAdditionalFieldTypes(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L163">    }</span>
+
+    public void setMdcFields(String spec) {
+<span class="fc" id="L166">        ConfigurationSupport.setMdcFields(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L167">    }</span>
+
+    public void setDynamicMdcFields(String spec) {
+<span class="fc" id="L170">        ConfigurationSupport.setDynamicMdcFields(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L171">    }</span>
+
+    public String getGraylogHost() {
+<span class="fc" id="L174">        return gelfMessageAssembler.getHost();</span>
+    }
+
+    public void setGraylogHost(String graylogHost) {
+<span class="fc" id="L178">        gelfMessageAssembler.setHost(graylogHost);</span>
+<span class="fc" id="L179">    }</span>
+
+    public String getOriginHost() {
+<span class="fc" id="L182">        return gelfMessageAssembler.getOriginHost();</span>
+    }
+
+    public void setOriginHost(String originHost) {
+<span class="nc" id="L186">        gelfMessageAssembler.setOriginHost(originHost);</span>
+<span class="nc" id="L187">    }</span>
+
+    public String getHost() {
+<span class="fc" id="L190">        return gelfMessageAssembler.getHost();</span>
+    }
+
+    public void setHost(String host) {
+<span class="fc" id="L194">        gelfMessageAssembler.setHost(host);</span>
+<span class="fc" id="L195">    }</span>
+
+    public int getPort() {
+<span class="fc" id="L198">        return gelfMessageAssembler.getPort();</span>
+    }
+
+    public void setPort(int port) {
+<span class="fc" id="L202">        gelfMessageAssembler.setPort(port);</span>
+<span class="fc" id="L203">    }</span>
+
+    public int getGraylogPort() {
+<span class="fc" id="L206">        return gelfMessageAssembler.getPort();</span>
+    }
+
+    public void setGraylogPort(int graylogPort) {
+<span class="fc" id="L210">        gelfMessageAssembler.setPort(graylogPort);</span>
+<span class="fc" id="L211">    }</span>
+
+    public String getFacility() {
+<span class="fc" id="L214">        return gelfMessageAssembler.getFacility();</span>
+    }
+
+    public void setFacility(String facility) {
+<span class="fc" id="L218">        gelfMessageAssembler.setFacility(facility);</span>
+<span class="fc" id="L219">    }</span>
+
+    public String getExtractStackTrace() {
+<span class="fc" id="L222">        return gelfMessageAssembler.getExtractStackTrace();</span>
+    }
+
+    public void setExtractStackTrace(String extractStacktrace) {
+<span class="fc" id="L226">        gelfMessageAssembler.setExtractStackTrace(extractStacktrace);</span>
+<span class="fc" id="L227">    }</span>
+
+    public boolean isFilterStackTrace() {
+<span class="fc" id="L230">        return gelfMessageAssembler.isFilterStackTrace();</span>
+    }
+
+    public void setFilterStackTrace(boolean filterStackTrace) {
+<span class="fc" id="L234">        gelfMessageAssembler.setFilterStackTrace(filterStackTrace);</span>
+<span class="fc" id="L235">    }</span>
+
+    public boolean isIncludeLogMessageParameters() {
+<span class="nc" id="L238">        return gelfMessageAssembler.isIncludeLogMessageParameters();</span>
+    }
+
+    public void setIncludeLogMessageParameters(boolean includeLogMessageParameters) {
+<span class="nc" id="L242">        gelfMessageAssembler.setIncludeLogMessageParameters(includeLogMessageParameters);</span>
+<span class="nc" id="L243">    }</span>
+
+    public String getTimestampPattern() {
+<span class="fc" id="L246">        return gelfMessageAssembler.getTimestampPattern();</span>
+    }
+
+    public void setTimestampPattern(String timestampPattern) {
+<span class="fc" id="L250">        gelfMessageAssembler.setTimestampPattern(timestampPattern);</span>
+<span class="fc" id="L251">    }</span>
+
+    public int getMaximumMessageSize() {
+<span class="fc" id="L254">        return gelfMessageAssembler.getMaximumMessageSize();</span>
+    }
+
+    public void setMaximumMessageSize(int maximumMessageSize) {
+<span class="fc" id="L258">        gelfMessageAssembler.setMaximumMessageSize(maximumMessageSize);</span>
+<span class="fc" id="L259">    }</span>
+
+    public String getVersion() {
+<span class="nc" id="L262">        return gelfMessageAssembler.getVersion();</span>
+    }
+
+    public void setVersion(String version) {
+<span class="fc" id="L266">        gelfMessageAssembler.setVersion(version);</span>
+<span class="fc" id="L267">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

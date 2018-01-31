@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StackTraceFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">StackTraceFilter.java</span></div><h1>StackTraceFilter.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
+
+import static biz.paluch.logging.RuntimeContainerProperties.getProperty;
+
+import java.io.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import biz.paluch.logging.gelf.intern.Closer;
+
+/**
+ * Filtering Facility for stack traces. This is to shorten very long Traces. It creates a redacted trace containing only the
+ * interesting parts. Please provide an own Resource {@code /StackTraceFilter.packages} with the package prefixes if you want to
+ * use a custom filter (one package per line).
+ *
+ * &lt;code&gt;
+ # Packages to filter
+ org.h2
+ org.apache.catalina
+ org.apache.coyote
+ org.apache.tomcat
+ com.arjuna
+ org.apache.cxf
+ * &lt;/code&gt;
+ *
+ * Original stack trace: &lt;code&gt;java.lang.RuntimeException: entryMethod
+	at biz.paluch.logging.StackTraceFilterTest.entryMethod(StackTraceFilterTest.java:49)
+	at biz.paluch.logging.StackTraceFilterTest.printStackTrace(StackTraceFilterTest.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:47)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:44)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:271)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:70)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:50)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:238)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:63)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:236)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:53)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:229)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:309)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:160)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)
+	at com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:51)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:237)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:147)
+Caused by: biz.paluch.logging.StackTraceFilterTest$MyException: Intermediate 2
+	at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:58)
+	at biz.paluch.logging.StackTraceFilterTest.intermediate1(StackTraceFilterTest.java:53)
+	... 30 more
+	Suppressed: java.lang.RuntimeException: surpressed
+		at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:59)
+		... 31 more
+		Suppressed: java.lang.RuntimeException: surpressed
+			at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:60)
+			... 31 more
+		Suppressed: java.lang.IllegalArgumentException: Failed to parse byte.
+			at org.jboss.common.beans.property.ByteEditor.setAsText(ByteEditor.java:48)
+			at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:65)
+			... 31 more
+		Caused by: java.lang.NumberFormatException: For input string: &quot;adsd&quot;
+			at java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)
+			at java.lang.Integer.parseInt(Integer.java:580)
+			at java.lang.Integer.valueOf(Integer.java:740)
+			at java.lang.Integer.decode(Integer.java:1197)
+			at java.lang.Byte.decode(Byte.java:277)
+			at org.jboss.common.beans.property.ByteEditor.setAsText(ByteEditor.java:45)
+			... 32 more
+Caused by: biz.paluch.logging.StackTraceFilterTest$MyException: Message
+	at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:77)
+	... 32 more
+	Suppressed: java.lang.IllegalStateException: Some illegal state
+		at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+		at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:78)
+		... 32 more
+	Suppressed: java.lang.IllegalStateException: Some illegal state
+		at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+		at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:79)
+		... 32 more
+Caused by: java.lang.IllegalStateException: Some illegal state
+	at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+	... 33 more
+    &lt;/code&gt;
+ *
+ * Filtered stack trace: &lt;code&gt;java.lang.RuntimeException: entryMethod
+	at biz.paluch.logging.StackTraceFilterTest.entryMethod(StackTraceFilterTest.java:49)
+	at biz.paluch.logging.StackTraceFilterTest.filterWholeStackTrace(StackTraceFilterTest.java:43)
+			19 lines skipped for [java.lang, sun., org.junit]
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)
+	at com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:51)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:237)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)
+			4 lines skipped for [java.lang, sun.]
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:147)
+Caused by: biz.paluch.logging.StackTraceFilterTest$MyException: Intermediate 2
+	at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:58)
+	at biz.paluch.logging.StackTraceFilterTest.intermediate1(StackTraceFilterTest.java:53)
+	... 30 more
+	Suppressed: java.lang.RuntimeException: surpressed
+		at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:59)
+		... 31 more
+		Suppressed: java.lang.RuntimeException: surpressed
+			at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:60)
+			... 31 more
+		Suppressed: java.lang.IllegalArgumentException: Failed to parse byte.
+			at org.jboss.common.beans.property.ByteEditor.setAsText(ByteEditor.java:48)
+			at biz.paluch.logging.StackTraceFilterTest.intermediate2(StackTraceFilterTest.java:65)
+			... 31 more
+		Caused by: java.lang.NumberFormatException: For input string: &quot;adsd&quot;
+					6 lines skipped for [java.lang, org.jboss]
+			... 32 more
+Caused by: biz.paluch.logging.StackTraceFilterTest$MyException: Message
+	at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:77)
+	... 32 more
+	Suppressed: java.lang.IllegalStateException: Some illegal state
+		at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+		at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:78)
+		... 32 more
+	Suppressed: java.lang.IllegalStateException: Some illegal state
+		at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+		at biz.paluch.logging.StackTraceFilterTest.intermediate3(StackTraceFilterTest.java:79)
+		... 32 more
+Caused by: java.lang.IllegalStateException: Some illegal state
+	at biz.paluch.logging.StackTraceFilterTest.cause(StackTraceFilterTest.java:84)
+	... 33 more&lt;/code&gt;
+ *
+ * @author Mark Paluch
+ */
+public class StackTraceFilter {
+
+    public static final String VERBOSE_LOGGING_PROPERTY = &quot;logstash-gelf.StackTraceFilter.verbose&quot;;
+<span class="fc" id="L142">    public static final String FILTER_SETTINGS = &quot;/&quot; + StackTraceFilter.class.getSimpleName() + &quot;.packages&quot;;</span>
+
+    private static final String INDENT = &quot;\t&quot;;
+<span class="fc" id="L145">    private static final boolean VERBOSE_LOGGING = Boolean.parseBoolean(getProperty(VERBOSE_LOGGING_PROPERTY, &quot;false&quot;));</span>
+
+<span class="fc" id="L147">    private static final Pattern AT_PATTERN = Pattern.compile(&quot;(&quot; + INDENT + &quot;)+at&quot;);</span>
+<span class="fc" id="L148">    private static final Pattern SURPRESSED_PATTERN = Pattern.compile(&quot;(&quot; + INDENT + &quot;)+Suppressed\\:&quot;);</span>
+
+    /**
+     * List of suppressed Packages.
+     */
+    private static Set&lt;String&gt; suppressedPackages;
+
+    static {
+<span class="fc" id="L156">        loadSetttings(FILTER_SETTINGS);</span>
+<span class="fc" id="L157">    }</span>
+
+    public static void loadSetttings(String resourceName) {
+<span class="fc" id="L160">        InputStream is = null;</span>
+        try {
+<span class="fc" id="L162">            is = getStream(resourceName);</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            if (is == null) {</span>
+<span class="fc" id="L164">                verboseLog(&quot;No &quot; + resourceName + &quot; resource present, using defaults&quot;);</span>
+<span class="fc" id="L165">                suppressedPackages = new HashSet&lt;String&gt;(getDefaults());</span>
+            } else {
+<span class="fc" id="L167">                Properties p = new Properties();</span>
+<span class="fc" id="L168">                p.load(is);</span>
+<span class="fc" id="L169">                suppressedPackages = (Set) p.keySet();</span>
+            }
+
+<span class="nc" id="L172">        } catch (IOException e) {</span>
+<span class="nc" id="L173">            verboseLog(&quot;Could not parse &quot; + resourceName + &quot; resource, using defaults&quot;);</span>
+<span class="nc" id="L174">            suppressedPackages = new HashSet&lt;String&gt;(getDefaults());</span>
+        } finally {
+<span class="pc" id="L176">            Closer.close(is);</span>
+<span class="pc" id="L177">        }</span>
+<span class="fc" id="L178">    }</span>
+
+    private static InputStream getStream(String resourceName) {
+
+<span class="fc" id="L182">        Thread thread = Thread.currentThread();</span>
+<span class="fc" id="L183">        InputStream is = StackTraceFilter.class.getResourceAsStream(resourceName);</span>
+<span class="pc bpc" id="L184" title="2 of 4 branches missed.">        if (is == null &amp;&amp; thread.getContextClassLoader() != null) {</span>
+<span class="fc" id="L185">            is = thread.getContextClassLoader().getResourceAsStream(resourceName);</span>
+        }
+<span class="fc" id="L187">        return is;</span>
+    }
+
+    public static List&lt;String&gt; getDefaults() {
+
+<span class="fc" id="L192">        return Arrays.asList(&quot;org.h2&quot;, &quot;org.apache.catalina&quot;, &quot;org.apache.coyote&quot;, &quot;org.apache.tomcat&quot;, &quot;com.arjuna&quot;,</span>
+                &quot;org.apache.cxf&quot;, &quot;org.hibernate&quot;, &quot;org.junit&quot;, &quot;org.jboss&quot;, &quot;java.lang.reflect.Method&quot;, &quot;sun.&quot;, &quot;com.sun&quot;,
+                &quot;org.eclipse&quot;, &quot;junit.framework&quot;, &quot;com.sun.faces&quot;, &quot;javax.faces&quot;, &quot;org.richfaces&quot;, &quot;org.apache.el&quot;,
+                &quot;javax.servlet&quot;);
+    }
+
+    /**
+     * Utility-Constructor.
+     */
+<span class="nc" id="L201">    private StackTraceFilter() {</span>
+<span class="nc" id="L202">    }</span>
+
+    /**
+     * Get a filterered stack trace.
+     *
+     * @param t the throwable
+     * @return String containing the filtered stack trace.
+     */
+    public static String getFilteredStackTrace(Throwable t) {
+<span class="fc" id="L211">        return getFilteredStackTrace(t, true);</span>
+    }
+
+    /**
+     * Get a filterered stack trace.
+     *
+     * @param t the throwable
+     * @param shouldFilter true in case filtering should be performed. Else stack trace as string will be returned.
+     * @return String containing the stack trace.
+     * @deprecated since 1.11.1. Use {@link #getStackTrace(Throwable, int)} to get the stack trace without filtering or
+     *             {@link #getFilteredStackTrace(Throwable)} to get the filtered the stack trace.
+     */
+    @Deprecated
+    public static String getFilteredStackTrace(Throwable t, boolean shouldFilter) {
+
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        if (shouldFilter) {</span>
+<span class="fc" id="L227">            return getFilteredStackTrace(t, 0);</span>
+        }
+
+<span class="nc" id="L230">        StringWriter sw = new StringWriter();</span>
+<span class="nc" id="L231">        PrintWriter pw = new PrintWriter(sw);</span>
+<span class="nc" id="L232">        t.printStackTrace(pw);</span>
+<span class="nc" id="L233">        pw.close();</span>
+
+<span class="nc" id="L235">        return sw.getBuffer().toString();</span>
+    }
+
+    /**
+     * Filter stack trace by selecting the {@link Throwable} using a reference position. Intermediate throwables will be printed
+     * with just their header.
+     *
+     * @param t the throwable
+     * @param ref throwable reference position, see {@link #getThrowable(List, int)}.
+     * @return String containing the stack trace.
+     * @since 1.11.1
+     */
+    public static String getFilteredStackTrace(Throwable t, int ref) {
+
+<span class="fc" id="L249">        StringWriter sw = new StringWriter();</span>
+<span class="fc" id="L250">        FilterWriter filterWriter = new StackTraceFilterWriter(sw);</span>
+
+<span class="fc" id="L252">        printStackTrace(t, filterWriter, ref);</span>
+
+<span class="fc" id="L254">        return sw.getBuffer().toString();</span>
+    }
+
+    /**
+     * Get the {@link Throwable}'s stack trace.
+     *
+     * @param t the throwable
+     * @return String containing the stack trace.
+     * @since 1.11.1
+     */
+    public static String getStackTrace(Throwable t) {
+<span class="fc" id="L265">        return getStackTrace(t, 0);</span>
+    }
+
+    /**
+     * Get the stack trace by selecting the {@link Throwable} using a reference position. Intermediate throwables will be
+     * printed with just their header.
+     *
+     * @param t the throwable
+     * @param ref throwable reference position, see {@link #getThrowable(List, int)}.
+     * @return String containing the stack trace.
+     * @since 1.11.1
+     */
+    public static String getStackTrace(Throwable t, int ref) {
+
+<span class="fc" id="L279">        StringWriter sw = new StringWriter();</span>
+<span class="fc" id="L280">        printStackTrace(t, sw, ref);</span>
+
+<span class="fc" id="L282">        return sw.getBuffer().toString();</span>
+    }
+
+    private static void printStackTrace(Throwable t, Writer writer, int ref) {
+
+<span class="fc" id="L287">        List&lt;Throwable&gt; throwables = getThrowables(t);</span>
+<span class="fc" id="L288">        PrintWriter exceptionWriter = new PrintWriter(writer);</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        Throwable subject = ref == 0 ? throwables.get(ref) : getThrowable(throwables, ref);</span>
+<span class="fc" id="L290">        boolean first = true;</span>
+
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        for (Throwable throwable : throwables) {</span>
+
+<span class="fc bfc" id="L294" title="All 2 branches covered.">            if (subject == throwable) {</span>
+<span class="fc" id="L295">                break;</span>
+            }
+
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            if (!first) {</span>
+<span class="fc" id="L299">                exceptionWriter.print(&quot;Caused by: &quot;);</span>
+            }
+
+<span class="fc" id="L302">            first = false;</span>
+
+<span class="fc" id="L304">            exceptionWriter.print(throwable.toString());</span>
+<span class="fc" id="L305">            exceptionWriter.println();</span>
+<span class="fc" id="L306">        }</span>
+
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        if (ref != 0) {</span>
+<span class="fc" id="L309">            exceptionWriter.print(&quot;Caused by: &quot;);</span>
+        }
+
+<span class="fc" id="L312">        subject.printStackTrace(exceptionWriter);</span>
+<span class="fc" id="L313">    }</span>
+
+    /**
+     * Return a {@link Throwable} by its reference position.
+     * &lt;p&gt;
+     * This method extracts a {@link Throwable} from the exception chain of {@link Throwable#getCause() causes}. A reference of
+     * {@code 0} returns the original {@link Throwable}, values greater zero will walk the cause chain up so a reference
+     * {@code 1} returns {@code t.getCause()}. Negative reference values will walk the causing exception from the root cause
+     * side. A reference of {@code -1} returns the root cause, {@code -2} the exception that wraps the root cause and so on.
+     *
+     * @param throwable the caught {@link Throwable}.
+     * @param ref reference position
+     * @return the selected {@link Throwable}.
+     */
+    public static Throwable getThrowable(Throwable throwable, int ref) {
+<span class="fc" id="L328">        return getThrowable(getThrowables(throwable), ref);</span>
+    }
+
+    private static Throwable getThrowable(List&lt;Throwable&gt; throwables, int ref) {
+
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (ref &gt;= 0) {</span>
+<span class="fc" id="L334">            return throwables.get(Math.min(ref, throwables.size() - 1));</span>
+        }
+
+<span class="fc" id="L337">        return throwables.get(Math.max(throwables.size() + ref, 0));</span>
+    }
+
+    private static List&lt;Throwable&gt; getThrowables(Throwable t) {
+
+<span class="fc" id="L342">        List&lt;Throwable&gt; throwables = new ArrayList&lt;Throwable&gt;();</span>
+
+<span class="fc" id="L344">        Throwable current = t;</span>
+
+        do {
+<span class="fc" id="L347">            throwables.add(current);</span>
+<span class="fc" id="L348">            current = current.getCause();</span>
+<span class="pc bpc" id="L349" title="1 of 4 branches missed.">        } while (current != null &amp;&amp; !throwables.contains(current));</span>
+<span class="fc" id="L350">        return throwables;</span>
+    }
+
+    private static int getIndentation(String traceElement) {
+
+<span class="fc" id="L355">        int index = traceElement.indexOf(INDENT);</span>
+<span class="fc" id="L356">        int indentationLevel = 0;</span>
+
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        while (index != -1) {</span>
+<span class="fc" id="L359">            indentationLevel++;</span>
+<span class="fc" id="L360">            index = traceElement.indexOf(INDENT, index + 1);</span>
+        }
+
+<span class="fc" id="L363">        return indentationLevel;</span>
+
+    }
+
+    // 37 lines skipped for [org.h2, org.hibernate, sun.,
+    // java.lang.reflect.Method, $Proxy]
+    private static String getSkippedPackagesMessage(Set&lt;String&gt; skippedPackages, int skippedLines, int indentationLevel) {
+
+<span class="fc" id="L371">        StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="fc bfc" id="L373" title="All 2 branches covered.">        for (int i = 0; i &lt; 2 + indentationLevel; i++) {</span>
+<span class="fc" id="L374">            stringBuilder.append(INDENT);</span>
+        }
+
+<span class="fc bfc" id="L377" title="All 2 branches covered.">        stringBuilder.append(skippedLines).append(&quot; line&quot;).append((skippedLines == 1 ? &quot;&quot; : &quot;s&quot;)).append(&quot; skipped for &quot;)</span>
+<span class="fc" id="L378">                .append(skippedPackages);</span>
+
+<span class="fc" id="L380">        return stringBuilder.toString();</span>
+    }
+
+    /**
+     * Checks to see if the class is part of a forbidden package. If so, it returns the package name from the list of suppressed
+     * packages that matches, otherwise it returns null.
+     *
+     * @param classAndMethod StackTraceElement
+     * @return forbidden package name or null.
+     */
+    private static String tryGetForbiddenPackageName(String classAndMethod) {
+
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        for (String pkg : suppressedPackages) {</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">            if (classAndMethod.startsWith(pkg)) {</span>
+<span class="fc" id="L394">                return pkg;</span>
+            }
+<span class="fc" id="L396">        }</span>
+<span class="fc" id="L397">        return null;</span>
+    }
+
+    private static void verboseLog(String message) {
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">        if (VERBOSE_LOGGING) {</span>
+<span class="nc" id="L402">            System.out.println(message);</span>
+        }
+<span class="fc" id="L404">    }</span>
+
+    static class StackTraceFilterWriter extends FilterWriter {
+
+<span class="fc" id="L408">        private final String traceElementPrefix = INDENT + &quot;at &quot;;</span>
+<span class="fc" id="L409">        Set&lt;String&gt; skippedPackages = new HashSet&lt;String&gt;();</span>
+        int skippedLines;
+        boolean endsWithNewLine;
+<span class="fc" id="L412">        boolean first = true;</span>
+        int indentationLevel;
+
+<span class="fc" id="L415">        private final String lineSeparator = System.getProperty(&quot;line.separator&quot;);</span>
+
+        public StackTraceFilterWriter(Writer s) {
+<span class="fc" id="L418">            super(s);</span>
+<span class="fc" id="L419">        }</span>
+
+        @Override
+        public void write(String str, int off, int len) throws IOException {
+
+<span class="fc" id="L424">            String toWrite = str.substring(off, len);</span>
+
+<span class="pc bpc" id="L426" title="1 of 6 branches missed.">            if (skippedLines &gt; 0 &amp;&amp; toWrite.equals(lineSeparator) &amp;&amp; endsWithNewLine) {</span>
+<span class="fc" id="L427">                return;</span>
+            }
+
+<span class="fc bfc" id="L430" title="All 2 branches covered.">            if (toWrite.equals(lineSeparator)) {</span>
+<span class="fc" id="L431">                endsWithNewLine = true;</span>
+<span class="fc" id="L432">                super.write(str, off, len);</span>
+<span class="fc" id="L433">                return;</span>
+            }
+
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (SURPRESSED_PATTERN.matcher(toWrite).find()) {</span>
+<span class="fc" id="L437">                first = true;</span>
+            }
+
+<span class="fc bfc" id="L440" title="All 4 branches covered.">            if (endsWithNewLine &amp;&amp; AT_PATTERN.matcher(toWrite).find()) {</span>
+
+<span class="fc" id="L442">                String traceElement = getTraceElement(toWrite);</span>
+
+<span class="fc" id="L444">                String forbiddenPackageName = null;</span>
+
+<span class="fc bfc" id="L446" title="All 2 branches covered.">                if (!first) {</span>
+<span class="fc" id="L447">                    forbiddenPackageName = tryGetForbiddenPackageName(traceElement);</span>
+                }
+
+<span class="fc" id="L450">                first = false;</span>
+
+<span class="fc bfc" id="L452" title="All 2 branches covered.">                if (forbiddenPackageName == null) {</span>
+<span class="fc" id="L453">                    afterFiltering();</span>
+<span class="fc" id="L454">                    super.write(str, off, len);</span>
+                } else {
+
+<span class="fc" id="L457">                    indentationLevel = getIndentation(toWrite);</span>
+<span class="fc" id="L458">                    skippedLines++;</span>
+<span class="fc" id="L459">                    skippedPackages.add(forbiddenPackageName);</span>
+                }
+<span class="fc" id="L461">                return;</span>
+            }
+
+<span class="fc" id="L464">            afterFiltering();</span>
+
+<span class="fc" id="L466">            super.write(str, off, len);</span>
+<span class="fc" id="L467">            endsWithNewLine = str.equals(lineSeparator);</span>
+<span class="fc" id="L468">        }</span>
+
+        private void afterFiltering() throws IOException {
+
+<span class="fc bfc" id="L472" title="All 2 branches covered.">            if (!skippedPackages.isEmpty()) {</span>
+                // 37 lines skipped for [org.h2, org.hibernate, sun.,
+                // java.lang.reflect.Method, $Proxy]
+<span class="fc" id="L475">                String skippedPackagesMessage = getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel);</span>
+
+<span class="fc" id="L477">                skippedPackages.clear();</span>
+<span class="fc" id="L478">                skippedLines = 0;</span>
+<span class="fc" id="L479">                write(skippedPackagesMessage);</span>
+<span class="fc" id="L480">                write(lineSeparator);</span>
+
+                // at hib.HibExample.test(HibExample.java:18)
+<span class="fc" id="L483">                indentationLevel = 0;</span>
+            }
+<span class="fc" id="L485">        }</span>
+
+        private String getTraceElement(String toWrite) {
+<span class="fc" id="L488">            return toWrite.substring(toWrite.indexOf(traceElementPrefix) + traceElementPrefix.length());</span>
+        }
+
+        @Override
+        public void close() throws IOException {
+<span class="nc bnc" id="L493" title="All 2 branches missed.">            if (skippedLines &gt; 0) {</span>
+<span class="nc" id="L494">                write(getSkippedPackagesMessage(skippedPackages, skippedLines, indentationLevel));</span>
+            }
+<span class="nc" id="L496">            super.close();</span>
+<span class="nc" id="L497">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

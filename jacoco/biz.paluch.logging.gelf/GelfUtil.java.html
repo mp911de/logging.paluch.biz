@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GelfUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf</a> &gt; <span class="el_source">GelfUtil.java</span></div><h1>GelfUtil.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import biz.paluch.logging.gelf.intern.GelfMessage;
+
+/**
+ * @author Mark Paluch
+ * @since 17.09.13 10:47
+ */
+public class GelfUtil {
+
+    /**
+     * Profiling Start in MDC (msec).
+     */
+    public static final String MDC_REQUEST_START_MS = &quot;profiling.requestStart.millis&quot;;
+    /**
+     * Profiling End in MDC.
+     */
+    public static final String MDC_REQUEST_END = &quot;profiling.requestEnd&quot;;
+
+    /**
+     * Profiling Duration in MDC.
+     */
+    public static final String MDC_REQUEST_DURATION = &quot;profiling.requestDuration&quot;;
+
+    public static final String MDC_REQUEST_DURATION_MILLIS = &quot;profiling.requestDuration.millis&quot;;
+    
+<span class="nc" id="L31">    private GelfUtil() {</span>
+
+<span class="nc" id="L33">    }</span>
+
+    public static void addMdcProfiling(LogEvent logEvent, GelfMessage gelfMessage) {
+        
+<span class="fc" id="L37">		String requestStartMs = logEvent.getMdcValue(MDC_REQUEST_START_MS);</span>
+        long timestamp;
+
+<span class="fc bfc" id="L40" title="All 4 branches covered.">        if (requestStartMs != null &amp;&amp; !requestStartMs.isEmpty()) {</span>
+<span class="fc" id="L41">            timestamp = Long.parseLong(requestStartMs);</span>
+        } else {
+<span class="fc" id="L43">            return;</span>
+        }
+
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (timestamp &gt; 0) {</span>
+<span class="fc" id="L47">            long now = System.currentTimeMillis();</span>
+<span class="fc" id="L48">            long durationMs = now - timestamp;</span>
+
+            String durationText;
+
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (durationMs &gt; 10000) {</span>
+<span class="fc" id="L53">                long durationSec = durationMs / 1000;</span>
+<span class="fc" id="L54">                durationText = durationSec + &quot;sec&quot;;</span>
+<span class="fc" id="L55">            } else {</span>
+<span class="fc" id="L56">                durationText = durationMs + &quot;ms&quot;;</span>
+            }
+<span class="fc" id="L58">            gelfMessage.addField(MDC_REQUEST_DURATION, durationText);</span>
+<span class="fc" id="L59">            gelfMessage.addField(MDC_REQUEST_DURATION_MILLIS, &quot;&quot; + durationMs);</span>
+<span class="fc" id="L60">            gelfMessage.addField(MDC_REQUEST_END, new Date(now).toString());</span>
+        }
+<span class="fc" id="L62">    }</span>
+
+    public static String getSimpleClassName(String className) {
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (className == null) {</span>
+<span class="fc" id="L67">            return null;</span>
+        }
+
+<span class="fc" id="L70">        int index = className.lastIndexOf('.');</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (index != -1) {</span>
+<span class="fc" id="L72">            return className.substring(index + 1);</span>
+        }
+<span class="fc" id="L74">        return className;</span>
+    }
+
+    public static Set&lt;String&gt; getMatchingMdcNames(DynamicMdcMessageField field, Set&lt;String&gt; mdcNames) {
+<span class="fc" id="L78">        Set&lt;String&gt; matchingMdcNames = new HashSet&lt;String&gt;();</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (String mdcName : mdcNames) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (field.getPattern().matcher(mdcName).matches()) {</span>
+
+<span class="fc" id="L83">                matchingMdcNames.add(mdcName);</span>
+
+            }
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        return matchingMdcNames;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

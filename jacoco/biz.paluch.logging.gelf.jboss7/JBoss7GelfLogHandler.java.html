@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JBoss7GelfLogHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.jboss7</a> &gt; <span class="el_source">JBoss7GelfLogHandler.java</span></div><h1>JBoss7GelfLogHandler.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.jboss7;
+
+import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.*;
+
+import java.util.logging.ErrorManager;
+import java.util.logging.LogRecord;
+
+import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.errormanager.OnlyOnceErrorManager;
+
+import biz.paluch.logging.gelf.GelfMessageAssembler;
+import biz.paluch.logging.gelf.LogMessageField;
+import biz.paluch.logging.gelf.MdcGelfMessageAssembler;
+import biz.paluch.logging.gelf.intern.GelfMessage;
+
+/**
+ * Logging-Handler for GELF (Graylog Extended Logging Format). This Java-Util-Logging Handler creates GELF Messages and posts
+ * them using UDP (default) or TCP. Following parameters are supported/needed:
+ * &lt;ul&gt;
+ * &lt;li&gt;host (Mandatory): Hostname/IP-Address of the Logstash Host
+ * &lt;ul&gt;
+ * &lt;li&gt;(the host) for UDP, e.g. 127.0.0.1 or some.host.com&lt;/li&gt;
+ * &lt;li&gt;See docs for more details&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;li&gt;port (Optional): Port, default 12201&lt;/li&gt;
+ * &lt;li&gt;originHost (Optional): Originating Hostname, default FQDN Hostname&lt;/li&gt;
+ * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 =
+ * throwable.cause, -1 = root cause]), default false&lt;/li&gt;
+ * &lt;li&gt;filterStackTrace (Optional): Perform Stack-Trace filtering (true/false), default false&lt;/li&gt;
+ * &lt;li&gt;includeLogMessageParameters (Optional): Include message parameters from the log event (see
+ * {@link LogRecord#getParameters()}, default true&lt;/li&gt;
+ * &lt;li&gt;mdcProfiling (Optional): Perform Profiling (Call-Duration) based on MDC Data. See &lt;a href=&quot;#mdcProfiling&quot;&gt;MDC
+ * Profiling&lt;/a&gt;, default false&lt;/li&gt;
+ * &lt;li&gt;facility (Optional): Name of the Facility, default gelf-java&lt;/li&gt;
+ * &lt;li&gt;level (Optional): Log-Level, default INFO&lt;/li&gt;
+ * &lt;li&gt;filter (Optional): Class-Name of a Log-Filter, default none&lt;/li&gt;
+ * &lt;li&gt;additionalFields(number) (Optional): Post additional fields. Eg.
+ * .GelfLogHandler.additionalFields=fieldName=Value,field2=value2&lt;/li&gt;
+ * &lt;li&gt;additionalFieldTypes (Optional): Type specification for additional and MDC fields. Supported types: String, long, Long,
+ * double, Double and discover (default if not specified, discover field type on parseability). Eg.
+ * field=String,field2=double&lt;/li&gt;
+ * &lt;li&gt;mdcFields (Optional): Post additional fields, pull Values from MDC. Name of the Fields are comma-separated
+ * .JBoss7GelfLogHandler.mdcFields=Application,Version,SomeOtherFieldName&lt;/li&gt;
+ * &lt;li&gt;dynamicMdcFields (Optional): Dynamic MDC Fields allows you to extract MDC values based on one or more regular
+ * expressions. Multiple regex are comma-separated. The name of the MDC entry is used as GELF field name.
+ * .JBoss7GelfLogHandler.dynamicMdcFields=mdc.*,[mdc|MDC]fields&lt;/li&gt;
+ * &lt;li&gt;includeFullMdc (Optional): Include all fields from the MDC, default false&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;a name=&quot;mdcProfiling&quot;&gt;&lt;/a&gt;
+ * &lt;h2&gt;MDC Profiling&lt;/h2&gt;
+ * &lt;p&gt;
+ * MDC Profiling allows to calculate the runtime from request start up to the time until the log message was generated. You must
+ * set one value in the MDC:
+ * &lt;ul&gt;
+ * &lt;li&gt;profiling.requestStart.millis: Time Millis of the Request-Start (Long or String)&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * Two values are set by the Log Appender:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;profiling.requestEnd: End-Time of the Request-End in Date.toString-representation&lt;/li&gt;
+ * &lt;li&gt;profiling.requestDuration: Duration of the request (e.g. 205ms, 16sec)&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * The {@link #publish(LogRecord)} method is thread-safe and may be called by different threads at any time.
+ *
+ * @author Mark Paluch
+ */
+public class JBoss7GelfLogHandler extends biz.paluch.logging.gelf.jul.GelfLogHandler {
+
+<span class="fc" id="L72">    private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();</span>
+    public JBoss7GelfLogHandler() {
+<span class="fc" id="L74">        super();</span>
+<span class="fc" id="L75">        super.setErrorManager(DEFAULT_ERROR_MANAGER);</span>
+<span class="fc" id="L76">    }</span>
+
+    protected void initializeDefaultFields() {
+<span class="fc" id="L79">        gelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(Time, Severity, ThreadName, SourceClassName,</span>
+                SourceMethodName, SourceSimpleClassName, LoggerName, NDC));
+<span class="fc" id="L81">    }</span>
+
+    @Override
+    public void publish(LogRecord record) {
+<span class="fc" id="L85">        super.publish(ExtLogRecord.wrap(record));</span>
+<span class="fc" id="L86">    }</span>
+
+    @Override
+    protected GelfMessageAssembler createGelfMessageAssembler() {
+<span class="fc" id="L90">        return new MdcGelfMessageAssembler();</span>
+    }
+
+    protected GelfMessage createGelfMessage(final LogRecord record) {
+<span class="fc" id="L94">        return getGelfMessageAssembler().createGelfMessage(new JBoss7JulLogEvent((ExtLogRecord) record));</span>
+    }
+
+    public void setAdditionalFields(String fieldSpec) {
+<span class="fc" id="L98">        super.setAdditionalFields(fieldSpec);</span>
+<span class="fc" id="L99">    }</span>
+
+    public void setMdcFields(String fieldSpec) {
+<span class="fc" id="L102">        super.setMdcFields(fieldSpec);</span>
+<span class="fc" id="L103">    }</span>
+
+    public void setDynamicMdcFields(String fieldSpec) {
+<span class="fc" id="L106">        super.setDynamicMdcFields(fieldSpec);</span>
+<span class="fc" id="L107">    }</span>
+
+    public boolean isMdcProfiling() {
+<span class="fc" id="L110">        return getGelfMessageAssembler().isMdcProfiling();</span>
+    }
+
+    public void setMdcProfiling(boolean mdcProfiling) {
+<span class="fc" id="L114">        getGelfMessageAssembler().setMdcProfiling(mdcProfiling);</span>
+<span class="fc" id="L115">    }</span>
+
+    public boolean isIncludeFullMdc() {
+<span class="fc" id="L118">        return getGelfMessageAssembler().isIncludeFullMdc();</span>
+    }
+
+    public void setIncludeFullMdc(boolean includeFullMdc) {
+<span class="fc" id="L122">        getGelfMessageAssembler().setIncludeFullMdc(includeFullMdc);</span>
+<span class="fc" id="L123">    }</span>
+
+    private MdcGelfMessageAssembler getGelfMessageAssembler() {
+<span class="fc" id="L126">        return (MdcGelfMessageAssembler) gelfMessageAssembler;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
