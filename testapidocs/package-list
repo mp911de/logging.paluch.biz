@@ -10,4 +10,3 @@ biz.paluch.logging.gelf.logback
 biz.paluch.logging.gelf.netty
 biz.paluch.logging.gelf.standalone
 biz.paluch.logging.gelf.wildfly
-external

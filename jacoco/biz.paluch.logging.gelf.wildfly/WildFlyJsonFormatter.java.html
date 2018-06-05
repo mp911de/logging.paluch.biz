@@ -1,21 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WildFlyJsonFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.wildfly</a> &gt; <span class="el_source">WildFlyJsonFormatter.java</span></div><h1>WildFlyJsonFormatter.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.wildfly;
 
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.LoggerName;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.NDC;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.Server;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.Severity;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.SourceClassName;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.SourceMethodName;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.SourceSimpleClassName;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.ThreadName;
-import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.Time;
+import static biz.paluch.logging.gelf.LogMessageField.NamedLogField.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
@@ -54,8 +41,11 @@ import biz.paluch.logging.gelf.jboss7.JBoss7JulLogEvent;
  * &lt;li&gt;fields (Optional): Comma-separated list of log event fields that should be included in the JSON. Defaults to
  * {@code Time, Severity, ThreadName, SourceClassName, SourceMethodName, SourceSimpleClassName, LoggerName, NDC}&lt;/li&gt;
  * &lt;li&gt;originHost (Optional): Originating Hostname, default FQDN Hostname&lt;/li&gt;
- * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 = throwable.cause, -1 = root cause]), default false&lt;/li&gt;
+ * &lt;li&gt;extractStackTrace (Optional): Post Stack-Trace to StackTrace field (true/false/throwable reference [0 = throwable, 1 =
+ * throwable.cause, -1 = root cause]), default false&lt;/li&gt;
  * &lt;li&gt;filterStackTrace (Optional): Perform Stack-Trace filtering (true/false), default false&lt;/li&gt;
+ * &lt;li&gt;includeLogMessageParameters (Optional): Include message parameters from the log event (see
+ * {@link ExtLogRecord#getParameters()}, default true&lt;/li&gt;
  * &lt;li&gt;mdcProfiling (Optional): Perform Profiling (Call-Duration) based on MDC Data. See &lt;a href=&quot;#mdcProfiling&quot;&gt;MDC
  * Profiling&lt;/a&gt;, default false&lt;/li&gt;
  * &lt;li&gt;facility (Optional): Name of the Facility, default gelf-java&lt;/li&gt;
@@ -84,166 +74,175 @@ import biz.paluch.logging.gelf.jboss7.JBoss7JulLogEvent;
  * &lt;/ul&gt;
  *
  * @author Mark Paluch
+ * @author André Krüger
  */
 public class WildFlyJsonFormatter extends ExtFormatter {
 
     public static final String MULTI_VALUE_DELIMITTER = &quot;,&quot;;
-<span class="fc" id="L91">    private MdcGelfMessageAssembler gelfMessageAssembler = new MdcGelfMessageAssembler();</span>
-<span class="fc" id="L92">    private String lineBreak = &quot;\n&quot;;</span>
-<span class="fc" id="L93">    private boolean wasSetFieldsCalled = false;</span>
+<span class="fc" id="L82">    private MdcGelfMessageAssembler gelfMessageAssembler = new MdcGelfMessageAssembler();</span>
+<span class="fc" id="L83">    private String lineBreak = &quot;\n&quot;;</span>
+<span class="fc" id="L84">    private boolean wasSetFieldsCalled = false;</span>
 
     public static final Set&lt;LogMessageField.NamedLogField&gt; SUPPORTED_FIELDS;
 
     static {
-<span class="fc" id="L98">        Set&lt;LogMessageField.NamedLogField&gt; supportedFields = new LinkedHashSet&lt;LogMessageField.NamedLogField&gt;();</span>
+<span class="fc" id="L89">        Set&lt;LogMessageField.NamedLogField&gt; supportedFields = new LinkedHashSet&lt;LogMessageField.NamedLogField&gt;();</span>
 
-<span class="fc" id="L100">        supportedFields.add(Time);</span>
-<span class="fc" id="L101">        supportedFields.add(Severity);</span>
-<span class="fc" id="L102">        supportedFields.add(ThreadName);</span>
-<span class="fc" id="L103">        supportedFields.add(SourceClassName);</span>
-<span class="fc" id="L104">        supportedFields.add(SourceMethodName);</span>
-<span class="fc" id="L105">        supportedFields.add(SourceSimpleClassName);</span>
-<span class="fc" id="L106">        supportedFields.add(LoggerName);</span>
-<span class="fc" id="L107">        supportedFields.add(NDC);</span>
-<span class="fc" id="L108">        supportedFields.add(Server);</span>
+<span class="fc" id="L91">        supportedFields.add(Time);</span>
+<span class="fc" id="L92">        supportedFields.add(Severity);</span>
+<span class="fc" id="L93">        supportedFields.add(ThreadName);</span>
+<span class="fc" id="L94">        supportedFields.add(SourceClassName);</span>
+<span class="fc" id="L95">        supportedFields.add(SourceMethodName);</span>
+<span class="fc" id="L96">        supportedFields.add(SourceSimpleClassName);</span>
+<span class="fc" id="L97">        supportedFields.add(LoggerName);</span>
+<span class="fc" id="L98">        supportedFields.add(NDC);</span>
+<span class="fc" id="L99">        supportedFields.add(Server);</span>
 
-<span class="fc" id="L110">        SUPPORTED_FIELDS = Collections.unmodifiableSet(supportedFields);</span>
-<span class="fc" id="L111">    }</span>
+<span class="fc" id="L101">        SUPPORTED_FIELDS = Collections.unmodifiableSet(supportedFields);</span>
+<span class="fc" id="L102">    }</span>
 
     /**
      * Create a new instance of the {@link WildFlyJsonFormatter}.
      */
-<span class="fc" id="L116">    public WildFlyJsonFormatter() {</span>
+<span class="fc" id="L107">    public WildFlyJsonFormatter() {</span>
 
-<span class="fc" id="L118">    }</span>
+<span class="fc" id="L109">    }</span>
 
     @Override
     public String format(ExtLogRecord extLogRecord) {
-<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (!wasSetFieldsCalled) {</span>
-<span class="fc" id="L123">            addFields(SUPPORTED_FIELDS);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!wasSetFieldsCalled) {</span>
+<span class="fc" id="L114">            addFields(SUPPORTED_FIELDS);</span>
         }
 
-<span class="fc" id="L126">        GelfMessage gelfMessage = gelfMessageAssembler.createGelfMessage(new JBoss7JulLogEvent(extLogRecord));</span>
-<span class="fc" id="L127">        return gelfMessage.toJson(&quot;&quot;) + getLineBreak();</span>
+<span class="fc" id="L117">        GelfMessage gelfMessage = gelfMessageAssembler.createGelfMessage(new JBoss7JulLogEvent(extLogRecord));</span>
+<span class="fc" id="L118">        return gelfMessage.toJson(&quot;&quot;) + getLineBreak();</span>
     }
 
     public void setFields(String fieldSpec) {
 
-<span class="fc" id="L132">        String[] properties = fieldSpec.split(MULTI_VALUE_DELIMITTER);</span>
-<span class="fc" id="L133">        List&lt;LogMessageField.NamedLogField&gt; fields = new ArrayList&lt;LogMessageField.NamedLogField&gt;();</span>
-<span class="fc bfc" id="L134" title="All 2 branches covered.">        for (String field : properties) {</span>
+<span class="fc" id="L123">        String[] properties = fieldSpec.split(MULTI_VALUE_DELIMITTER);</span>
+<span class="fc" id="L124">        List&lt;LogMessageField.NamedLogField&gt; fields = new ArrayList&lt;LogMessageField.NamedLogField&gt;();</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (String field : properties) {</span>
 
-<span class="fc" id="L136">            LogMessageField.NamedLogField namedLogField = LogMessageField.NamedLogField.byName(field.trim());</span>
-<span class="fc bfc" id="L137" title="All 2 branches covered.">            if (namedLogField == null) {</span>
-<span class="fc" id="L138">                throw new IllegalArgumentException(&quot;Cannot resolve field name '&quot; + field</span>
+<span class="fc" id="L127">            LogMessageField.NamedLogField namedLogField = LogMessageField.NamedLogField.byName(field.trim());</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (namedLogField == null) {</span>
+<span class="fc" id="L129">                throw new IllegalArgumentException(&quot;Cannot resolve field name '&quot; + field</span>
                         + &quot;' to a field. Supported field names are: &quot; + SUPPORTED_FIELDS);
             }
 
-<span class="fc bfc" id="L142" title="All 2 branches covered.">            if (!SUPPORTED_FIELDS.contains(namedLogField)) {</span>
-<span class="fc" id="L143">                throw new IllegalArgumentException(&quot;Field '&quot; + field + &quot;' is not supported. Supported field names are: &quot;</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            if (!SUPPORTED_FIELDS.contains(namedLogField)) {</span>
+<span class="fc" id="L134">                throw new IllegalArgumentException(&quot;Field '&quot; + field + &quot;' is not supported. Supported field names are: &quot;</span>
                         + SUPPORTED_FIELDS);
             }
 
-<span class="fc" id="L147">            fields.add(namedLogField);</span>
+<span class="fc" id="L138">            fields.add(namedLogField);</span>
         }
 
-<span class="fc" id="L150">        addFields(fields);</span>
+<span class="fc" id="L141">        addFields(fields);</span>
 
-<span class="fc" id="L152">    }</span>
+<span class="fc" id="L143">    }</span>
 
     private void addFields(Collection&lt;LogMessageField.NamedLogField&gt; fields) {
-<span class="fc" id="L155">        gelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(fields</span>
-<span class="fc" id="L156">                .toArray(new LogMessageField.NamedLogField[fields.size()])));</span>
+<span class="fc" id="L146">        gelfMessageAssembler.addFields(LogMessageField.getDefaultMapping(fields</span>
+<span class="fc" id="L147">                .toArray(new LogMessageField.NamedLogField[fields.size()])));</span>
 
-<span class="fc" id="L158">        wasSetFieldsCalled = true;</span>
-<span class="fc" id="L159">    }</span>
+<span class="fc" id="L149">        wasSetFieldsCalled = true;</span>
+<span class="fc" id="L150">    }</span>
 
     public void setAdditionalFields(String spec) {
-<span class="fc" id="L162">        ConfigurationSupport.setAdditionalFields(spec, gelfMessageAssembler);</span>
-<span class="fc" id="L163">    }</span>
+<span class="fc" id="L153">        ConfigurationSupport.setAdditionalFields(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L154">    }</span>
 
     public void setAdditionalFieldTypes(String spec) {
-<span class="nc" id="L166">        ConfigurationSupport.setAdditionalFieldTypes(spec, gelfMessageAssembler);</span>
-<span class="nc" id="L167">    }</span>
+<span class="nc" id="L157">        ConfigurationSupport.setAdditionalFieldTypes(spec, gelfMessageAssembler);</span>
+<span class="nc" id="L158">    }</span>
 
     public void setMdcFields(String spec) {
-<span class="nc" id="L170">        ConfigurationSupport.setMdcFields(spec, gelfMessageAssembler);</span>
-<span class="nc" id="L171">    }</span>
+<span class="nc" id="L161">        ConfigurationSupport.setMdcFields(spec, gelfMessageAssembler);</span>
+<span class="nc" id="L162">    }</span>
 
     public void setDynamicMdcFields(String spec) {
-<span class="fc" id="L174">        ConfigurationSupport.setDynamicMdcFields(spec, gelfMessageAssembler);</span>
-<span class="fc" id="L175">    }</span>
+<span class="fc" id="L165">        ConfigurationSupport.setDynamicMdcFields(spec, gelfMessageAssembler);</span>
+<span class="fc" id="L166">    }</span>
 
     public boolean isMdcProfiling() {
-<span class="nc" id="L178">        return gelfMessageAssembler.isMdcProfiling();</span>
+<span class="nc" id="L169">        return gelfMessageAssembler.isMdcProfiling();</span>
     }
 
     public void setMdcProfiling(boolean mdcProfiling) {
-<span class="nc" id="L182">        gelfMessageAssembler.setMdcProfiling(mdcProfiling);</span>
-<span class="nc" id="L183">    }</span>
+<span class="nc" id="L173">        gelfMessageAssembler.setMdcProfiling(mdcProfiling);</span>
+<span class="nc" id="L174">    }</span>
 
     public boolean isIncludeFullMdc() {
-<span class="nc" id="L186">        return gelfMessageAssembler.isIncludeFullMdc();</span>
+<span class="nc" id="L177">        return gelfMessageAssembler.isIncludeFullMdc();</span>
     }
 
     public void setIncludeFullMdc(boolean includeFullMdc) {
-<span class="fc" id="L190">        gelfMessageAssembler.setIncludeFullMdc(includeFullMdc);</span>
-<span class="fc" id="L191">    }</span>
+<span class="fc" id="L181">        gelfMessageAssembler.setIncludeFullMdc(includeFullMdc);</span>
+<span class="fc" id="L182">    }</span>
 
     public String getOriginHost() {
-<span class="nc" id="L194">        return gelfMessageAssembler.getOriginHost();</span>
+<span class="nc" id="L185">        return gelfMessageAssembler.getOriginHost();</span>
     }
 
     public void setOriginHost(String originHost) {
-<span class="fc" id="L198">        gelfMessageAssembler.setOriginHost(originHost);</span>
-<span class="fc" id="L199">    }</span>
+<span class="fc" id="L189">        gelfMessageAssembler.setOriginHost(originHost);</span>
+<span class="fc" id="L190">    }</span>
 
     public String getFacility() {
-<span class="nc" id="L202">        return gelfMessageAssembler.getFacility();</span>
+<span class="nc" id="L193">        return gelfMessageAssembler.getFacility();</span>
     }
 
     public void setFacility(String facility) {
-<span class="nc" id="L206">        gelfMessageAssembler.setFacility(facility);</span>
-<span class="nc" id="L207">    }</span>
+<span class="nc" id="L197">        gelfMessageAssembler.setFacility(facility);</span>
+<span class="nc" id="L198">    }</span>
 
     public String getExtractStackTrace() {
-<span class="nc" id="L210">        return gelfMessageAssembler.getExtractStackTrace();</span>
+<span class="nc" id="L201">        return gelfMessageAssembler.getExtractStackTrace();</span>
     }
 
     public void setExtractStackTrace(String extractStacktrace) {
-<span class="fc" id="L214">        gelfMessageAssembler.setExtractStackTrace(extractStacktrace);</span>
-<span class="fc" id="L215">    }</span>
+<span class="fc" id="L205">        gelfMessageAssembler.setExtractStackTrace(extractStacktrace);</span>
+<span class="fc" id="L206">    }</span>
 
     public boolean isFilterStackTrace() {
-<span class="nc" id="L218">        return gelfMessageAssembler.isFilterStackTrace();</span>
+<span class="nc" id="L209">        return gelfMessageAssembler.isFilterStackTrace();</span>
     }
 
     public void setFilterStackTrace(boolean filterStackTrace) {
-<span class="nc" id="L222">        gelfMessageAssembler.setFilterStackTrace(filterStackTrace);</span>
-<span class="nc" id="L223">    }</span>
+<span class="nc" id="L213">        gelfMessageAssembler.setFilterStackTrace(filterStackTrace);</span>
+<span class="nc" id="L214">    }</span>
 
     public String getTimestampPattern() {
-<span class="nc" id="L226">        return gelfMessageAssembler.getTimestampPattern();</span>
+<span class="nc" id="L217">        return gelfMessageAssembler.getTimestampPattern();</span>
     }
 
     public void setTimestampPattern(String timestampPattern) {
-<span class="nc" id="L230">        gelfMessageAssembler.setTimestampPattern(timestampPattern);</span>
-<span class="nc" id="L231">    }</span>
+<span class="nc" id="L221">        gelfMessageAssembler.setTimestampPattern(timestampPattern);</span>
+<span class="nc" id="L222">    }</span>
 
     public String getVersion() {
-<span class="nc" id="L234">        return gelfMessageAssembler.getVersion();</span>
+<span class="nc" id="L225">        return gelfMessageAssembler.getVersion();</span>
     }
 
     public void setVersion(String version) {
-<span class="nc" id="L238">        gelfMessageAssembler.setVersion(version);</span>
-<span class="nc" id="L239">    }</span>
+<span class="nc" id="L229">        gelfMessageAssembler.setVersion(version);</span>
+<span class="nc" id="L230">    }</span>
 
     public String getLineBreak() {
-<span class="fc" id="L242">        return lineBreak;</span>
+<span class="fc" id="L233">        return lineBreak;</span>
     }
 
     public void setLineBreak(String lineBreak) {
-<span class="fc" id="L246">        this.lineBreak = lineBreak;</span>
-<span class="fc" id="L247">    }</span>
+<span class="fc" id="L237">        this.lineBreak = lineBreak;</span>
+<span class="fc" id="L238">    }</span>
+
+    public boolean isIncludeLogMessageParameters() {
+<span class="nc" id="L241">        return gelfMessageAssembler.isIncludeLogMessageParameters();</span>
+    }
+
+    public void setIncludeLogMessageParameters(boolean includeLogMessageParameters) {
+<span class="fc" id="L245">        gelfMessageAssembler.setIncludeLogMessageParameters(includeLogMessageParameters);</span>
+<span class="fc" id="L246">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
