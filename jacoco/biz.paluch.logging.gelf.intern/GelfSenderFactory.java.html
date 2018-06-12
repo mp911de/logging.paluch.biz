@@ -68,8 +68,8 @@ import biz.paluch.logging.gelf.intern.sender.RedisGelfSenderProvider;
     public static GelfSender createSender(GelfSenderConfiguration senderConfiguration) {
 
 <span class="fc" id="L70">        ErrorReporter errorReporter = senderConfiguration.getErrorReporter();</span>
-<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (senderConfiguration.getHost() == null) {</span>
-<span class="fc" id="L72">            senderConfiguration.getErrorReporter().reportError(&quot;GELF server hostname is empty!&quot;, null);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (senderConfiguration.getHost() == null) {</span>
+<span class="nc" id="L72">            senderConfiguration.getErrorReporter().reportError(&quot;GELF server hostname is empty!&quot;, null);</span>
         } else {
 
             try {

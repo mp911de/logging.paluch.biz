@@ -185,7 +185,7 @@ class Log4jLogEvent implements LogEvent {
     @Override
     public String getMdcValue(String mdcName) {
 
-<span class="pc bpc" id="L188" title="1 of 2 branches missed.">        if (mdc != null) {</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (mdc != null) {</span>
 <span class="fc" id="L189">            Object value = mdc.get(mdcName);</span>
 <span class="fc bfc" id="L190" title="All 2 branches covered.">            if (value != null) {</span>
 <span class="fc" id="L191">                return value.toString();</span>

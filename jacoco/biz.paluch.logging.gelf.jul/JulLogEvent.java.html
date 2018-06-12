@@ -179,8 +179,8 @@ public class JulLogEvent implements LogEvent {
 
     private String getSourceMethodName() {
 <span class="fc" id="L181">        String sourceMethodName = logRecord.getSourceMethodName();</span>
-<span class="pc bpc" id="L182" title="1 of 4 branches missed.">        if (sourceMethodName == null || &quot;&lt;unknown&gt;&quot;.equals(sourceMethodName)) {</span>
-<span class="fc" id="L183">            return null;</span>
+<span class="pc bpc" id="L182" title="2 of 4 branches missed.">        if (sourceMethodName == null || &quot;&lt;unknown&gt;&quot;.equals(sourceMethodName)) {</span>
+<span class="nc" id="L183">            return null;</span>
         }
 
 <span class="fc" id="L186">        return sourceMethodName;</span>
@@ -188,8 +188,8 @@ public class JulLogEvent implements LogEvent {
 
     private String getSourceClassName() {
 <span class="fc" id="L190">        String sourceClassName = logRecord.getSourceClassName();</span>
-<span class="pc bpc" id="L191" title="1 of 4 branches missed.">        if (sourceClassName == null || &quot;&lt;unknown&gt;&quot;.equals(sourceClassName)) {</span>
-<span class="fc" id="L192">            return null;</span>
+<span class="pc bpc" id="L191" title="2 of 4 branches missed.">        if (sourceClassName == null || &quot;&lt;unknown&gt;&quot;.equals(sourceClassName)) {</span>
+<span class="nc" id="L192">            return null;</span>
         }
 
 <span class="fc" id="L195">        return sourceClassName;</span>
