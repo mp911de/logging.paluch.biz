@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="Date-Revision-yyyymmdd" content="20181007" />
     <meta http-equiv="Content-Language" content="en" />
-    <title>Logstash/Gelf Loggers &#x2013; log4j 1.2.x JSON Layout</title>
+    <title>Logstash/Gelf Loggers &#x2013; Thorntail (WildFly Swarm 2.x)</title>
     <link rel="stylesheet" href="../css/apache-maven-fluido-1.5.min.css" />
     <link rel="stylesheet" href="../css/site.css" />
     <link rel="stylesheet" href="../css/print.css" media="print" />
@@ -96,10 +96,12 @@
         log4j v1.2.x</a>
             </li>
                 
-      <li class="active">
+      <li>
   
-            <a href="#"><span class="none"></span>log4j v1.2.x JSON Layout</a>
-          </li>
+                          <a href="../examples/log4j-1.2.x-json.html" title="log4j v1.2.x JSON Layout">
+          <span class="none"></span>
+        log4j v1.2.x JSON Layout</a>
+            </li>
                 
       <li>
   
@@ -124,17 +126,15 @@
                 
       <li>
   
-                          <a href="../examples/wildfly-swarm-thorntail.html" title="Thorntail (WildFly Swarm)">
-          <span class="none"></span>
-        Thorntail (WildFly Swarm)</a>
-            </li>
-                
-      <li>
-  
                           <a href="../examples/wildfly-json.html" title="WildFly JSON Formatter">
           <span class="none"></span>
         WildFly JSON Formatter</a>
             </li>
+                
+      <li class="active">
+  
+            <a href="#"><span class="none"></span>Thorntail (WildFly Swarm)</a>
+          </li>
                 
       <li>
   
@@ -272,7 +272,7 @@
                 
         <div id="bodyColumn"  class="span10" >
                                   
-            <h1>log4j 1.2.x JSON Layout</h1>
+            <h1>Thorntail (WildFly Swarm 2.x)</h1>
 <p>Following settings can be used:</p>
 
 <table border="0" class="table table-striped">
@@ -291,20 +291,25 @@
     
 <tr class="b">
       
-<td>lineBreak </td>
+<td>host </td>
       
-<td align="center">End of line string </td>
+<td align="center">Hostname/IP-Address of the Logstash host. The <tt>host</tt> field accepts following forms: 
+<ul>
+<li><tt>tcp:hostname</tt> for TCP transport, e. g. <tt>tcp:127.0.0.1</tt> or <tt>tcp:some.host.com</tt> </li>
+<li><tt>udp:hostname</tt> for UDP transport, e. g. <tt>udp:127.0.0.1</tt>, <tt>udp:some.host.com</tt> or just <tt>some.host.com</tt> </li>
+<li><tt>redis://[:password@]hostname:port/db-number#listname</tt> for Redis transport. See <a href="../redis.html">Redis transport for logstash-gelf</a> for details. </li>
+<li><tt>redis-sentinel://[:password@]hostname:port/db-number?masterId=masterId#listname</tt> for Redis transport with Sentinel lookup. See <a href="../redis.html">Redis transport for logstash-gelf</a> for details. </li></ul> </td>
       
-<td align="center">platform dependent default value, see <tt>System.getProperty(&quot;line.separator&quot;)</tt> </td>
+<td align="center">none </td>
     </tr>
     
 <tr class="a">
       
-<td>fields </td>
+<td>port </td>
       
-<td align="center">Comma-separated list of log event fields that should be included in the JSON </td>
+<td align="center">Port of the Logstash host </td>
       
-<td align="center"><tt>Time, Severity, ThreadName, SourceClassName, SourceMethodName, SourceSimpleClassName, LoggerName, NDC, Server</tt> </td>
+<td align="center"><tt>12201</tt> </td>
     </tr>
     
 <tr class="b">
@@ -345,20 +350,20 @@
     
 <tr class="b">
       
-<td>includeLocation </td>
+<td>includeLogMessageParameters </td>
       
-<td align="center">Include source code location </td>
+<td align="center">Include message parameters from the log event </td>
       
 <td align="center"><tt>true</tt> </td>
     </tr>
     
 <tr class="a">
       
-<td>mdcProfiling </td>
+<td>includeLocation </td>
       
-<td align="center">Perform Profiling (Call-Duration) based on MDC Data. See <a href="../mdcprofiling.html">MDC Profiling</a> for details </td>
+<td align="center">Include source code location </td>
       
-<td align="center"><tt>false</tt> </td>
+<td align="center"><tt>true</tt> </td>
     </tr>
     
 <tr class="b">
@@ -372,14 +377,41 @@
     
 <tr class="a">
       
-<td>additionalFields </td>
+<td>mdcProfiling </td>
       
-<td align="center">Send additional static fields. The fields are specified as key-value pairs are comma-separated. Example: <tt>GelfLogHandler.additionalFields=fieldName=Value,fieldName2=Value2</tt> </td>
+<td align="center">Perform Profiling (Call-Duration) based on MDC Data. See <a href="../mdcprofiling.html">MDC Profiling</a> for details </td>
+      
+<td align="center"><tt>false</tt> </td>
+    </tr>
+    
+<tr class="b">
+      
+<td>level </td>
+      
+<td align="center">Log-Level threshold </td>
+      
+<td align="center"><tt>INFO</tt> </td>
+    </tr>
+    
+<tr class="a">
+      
+<td>filter </td>
+      
+<td align="center">Class-Name of a Log-Filter </td>
       
 <td align="center">none </td>
     </tr>
     
 <tr class="b">
+      
+<td>additionalFields </td>
+      
+<td align="center">Send additional static fields. The fields are specified as key-value pairs are comma-separated. Example: <tt>additionalFields=fieldName=Value,fieldName2=Value2</tt> </td>
+      
+<td align="center">none </td>
+    </tr>
+    
+<tr class="a">
       
 <td>additionalFieldTypes </td>
       
@@ -388,7 +420,7 @@
 <td align="center"><tt>discover</tt> for all additional fields </td>
     </tr>
     
-<tr class="a">
+<tr class="b">
       
 <td>mdcFields </td>
       
@@ -397,7 +429,7 @@
 <td align="center">none </td>
     </tr>
     
-<tr class="b">
+<tr class="a">
       
 <td>dynamicMdcFields </td>
       
@@ -406,13 +438,22 @@
 <td align="center">none </td>
     </tr>
     
-<tr class="a">
+<tr class="b">
       
 <td>includeFullMdc </td>
       
 <td align="center">Include all fields from the MDC. </td>
       
 <td align="center"><tt>false</tt> </td>
+    </tr>
+    
+<tr class="a">
+      
+<td>maximumMessageSize</td>
+      
+<td align="center">Maximum message size (in bytes). If the message size is exceeded, the appender will submit the message in multiple chunks. </td>
+      
+<td align="center"><tt>8192</tt> </td>
     </tr>
     
 <tr class="b">
@@ -425,65 +466,50 @@
     </tr>
   </tbody>
 </table>
-<p>The JSON formatter creates then messages like:</p>
-
-<div class="source">
-<div class="source"><pre class="prettyprint linenums">{
-    &quot;LoggerName&quot;: &quot;org.wildfly.extension.undertow&quot;,
-    &quot;short_message&quot;: &quot;WFLYUT0008: Undertow HTTP listener default suspending&quot;,
-    &quot;level&quot;: &quot;6&quot;,
-    &quot;Time&quot;: &quot;2015-08-11 21:25:32,0734&quot;,
-    &quot;Severity&quot;: &quot;INFO&quot;,
-    &quot;MessageParam1&quot;: &quot;default&quot;,
-    &quot;Thread&quot;: &quot;MSC service thread 1-6&quot;,
-    &quot;SourceMethodName&quot;: &quot;stopListening&quot;,
-    &quot;MessageParam0&quot;: &quot;HTTP&quot;,
-    &quot;full_message&quot;: &quot;WFLYUT0008: Undertow HTTP listener default suspending&quot;,
-    &quot;SourceSimpleClassName&quot;: &quot;HttpListenerService&quot;,
-    &quot;SourceClassName&quot;: &quot;org.wildfly.extension.undertow.HttpListenerService&quot;,
-    &quot;facility&quot;: &quot;java-test&quot;,
-    &quot;timestamp&quot;: &quot;1439321132.734&quot;
-}
-</pre></div></div>
-<p>Default line break depends on the platform, JSON objects are separated by line breaks only.</p>
+<p>The only mandatory field is <tt>host</tt>. All other fields are optional.</p>
 <div class="section">
-<h2><a name="log4j_Configuration"></a>log4j Configuration</h2>
-<p>Properties:</p>
+<h2><a name="Preliminary_Steps"></a>Preliminary Steps</h2>
+<p>If you want to get started with the logstash-gelf support for WildFly Swarm/Thorntail, you will need to integrate logstash-gelf as a module within the server. It is possible to create the module manually, but it&#x2019;s easier to use the prepackaged binary and extract the <tt>module.xml</tt> file. Please follow the steps to integrate the module:</p>
+
+<ol style="list-style-type: decimal">
+  
+<li>Obtain the logging module from <a class="externalLink" href="http://search.maven.org/remotecontent?filepath=biz/paluch/logging/logstash-gelf/1.12.0/logstash-gelf-1.12.0-logging-module.zip">Maven</a> or <a class="externalLink" href="https://github.com/mp911de/logstash-gelf/releases/download/logstash-gelf-1.12.0/logstash-gelf-1.12.0-logging-module.zip">Github</a></li>
+  
+<li>Extract the module to and copy <tt>module.xml</tt> to <tt>src/main/resources/modules/biz/paluch/logging/main</tt>.</li>
+  
+<li>Configure the logging subsystem using <tt>src/main/resources/project-stages.yml</tt>:</li>
+</ol></div>
+<div class="section">
+<h2><a name="Logging_Configuration"></a>Logging Configuration</h2>
+<p><tt>project-stages.yml</tt>:</p>
 
 <div class="source">
-<div class="source"><pre class="prettyprint linenums">log4j.appender.file.layout=biz.paluch.logging.gelf.log4j.GelfLayout
-log4j.appender.file.layout.Version=1.0
-log4j.appender.file.layout.Facility=java-test
-log4j.appender.file.layout.ExtractStackTrace=true
-log4j.appender.file.layout.FilterStackTrace=true
-log4j.appender.file.layout.IncludeLocation=true
-log4j.appender.file.layout.MdcProfiling=true
-log4j.appender.file.layout.TimestampPattern=yyyy-MM-dd HH:mm:ss,SSSS
-log4j.appender.file.layout.AdditionalFields=fieldName1=fieldValue1,fieldName2=fieldValue2
-log4j.appender.file.layout.AdditionalFieldTypes=fieldName1=String,fieldName2=Double,fieldName3=Long
-log4j.appender.file.layout.MdcFields=mdcField1,mdcField2
-log4j.appender.file.layout.DynamicMdcFields=mdc.*,(mdc|MDC)fields
-log4j.appender.file.layout.IncludeFullMdc=true
-</pre></div></div>
-<p>XML:</p>
-
-<div class="source">
-<div class="source"><pre class="prettyprint linenums">&lt;appender name=&quot;file&quot; class=&quot;org.apache.log4j.FileAppender&quot;&gt;
-    &lt;param name=&quot;file&quot; value=&quot;logfile.log&quot; /&gt;
-    &lt;layout class=&quot;biz.paluch.logging.gelf.log4j.GelfLayout&quot;&gt;
-        &lt;param name=&quot;Facility&quot; value=&quot;java-test&quot; /&gt;
-        &lt;param name=&quot;ExtractStackTrace&quot; value=&quot;true&quot; /&gt;
-        &lt;param name=&quot;FilterStackTrace&quot; value=&quot;true&quot; /&gt;
-        &lt;param name=&quot;MdcProfiling&quot; value=&quot;true&quot; /&gt;
-        &lt;param name=&quot;IncludeLocation&quot; value=&quot;true&quot; /&gt;
-        &lt;param name=&quot;TimestampPattern&quot; value=&quot;yyyy-MM-dd HH:mm:ss,SSSS&quot; /&gt;
-        &lt;param name=&quot;AdditionalFields&quot; value=&quot;fieldName1=fieldValue1,fieldName2=fieldValue2&quot; /&gt;
-        &lt;param name=&quot;AdditionalFieldTypes&quot; value=&quot;fieldName1=String,fieldName2=Double,fieldName3=Long&quot; /&gt;
-        &lt;param name=&quot;MdcFields&quot; value=&quot;mdcField1,mdcField2&quot; /&gt;
-        &lt;param name=&quot;DynamicMdcFields&quot; value=&quot;mdc.*,(mdc|MDC)fields&quot; /&gt;
-        &lt;param name=&quot;IncludeFullMdc&quot; value=&quot;true&quot; /&gt;
-    &lt;/layout&gt;
-&lt;/appender&gt;
+<div class="source"><pre class="prettyprint linenums">swarm:
+  logging:
+    custom-handlers:
+      GelfLogger:
+        attribute-class: biz.paluch.logging.gelf.wildfly.WildFlyGelfLogHandler
+        module: biz.paluch.logging
+        properties:
+            host=udp:localhost
+            port=12201
+            version=1.0
+            facility=java-test
+            extractStackTrace=true
+            filterStackTrace=true
+            includeLocation=true
+            mdcProfiling=true
+            timestampPattern=yyyy-MM-dd HH:mm:ss,SSSS
+            maximumMessageSize=8192
+            additionalFields=fieldName1=fieldValue1,fieldName2=fieldValue2
+            additionalFieldTypes=fieldName1=String,fieldName2=Double,fieldName3=Long
+            MdcFields=mdcField1,mdcField2
+            dynamicMdcFields=mdc.*,(mdc|MDC)fields
+            includeFullMdc=true
+    root-logger:
+      level: INFO
+      handlers:
+      - GelfLogger
 </pre></div></div></div>
                   </div>
             </div>

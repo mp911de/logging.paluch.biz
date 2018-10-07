@@ -213,7 +213,7 @@ import java.util.Map;
 <span class="fc bfc" id="L213" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
 <span class="fc" id="L214">            char c = seq.charAt(i);</span>
 
-<span class="pc bpc" id="L216" title="1 of 8 branches missed.">            switch (c) {</span>
+<span class="fc bfc" id="L216" title="All 8 branches covered.">            switch (c) {</span>
                 case '\b':
 <span class="fc" id="L218">                    out.write(B);</span>
 <span class="fc" id="L219">                    continue;</span>
@@ -227,8 +227,8 @@ import java.util.Map;
 <span class="fc" id="L227">                    out.write(F);</span>
 <span class="fc" id="L228">                    continue;</span>
                 case '\r':
-<span class="nc" id="L230">                    out.write(R);</span>
-<span class="nc" id="L231">                    continue;</span>
+<span class="fc" id="L230">                    out.write(R);</span>
+<span class="fc" id="L231">                    continue;</span>
                 case '\&quot;':
 <span class="fc" id="L233">                    out.write(QUOT);</span>
 <span class="fc" id="L234">                    continue;</span>

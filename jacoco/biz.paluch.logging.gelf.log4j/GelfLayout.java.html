@@ -217,28 +217,36 @@ public class GelfLayout extends Layout {
 <span class="fc" id="L217">        gelfMessageAssembler.setFilterStackTrace(filterStackTrace);</span>
 <span class="fc" id="L218">    }</span>
 
+    public boolean isIncludeLocation() {
+<span class="nc" id="L221">        return gelfMessageAssembler.isIncludeLocation();</span>
+    }
+
+    public void setIncludeLocation(boolean includeLocation) {
+<span class="fc" id="L225">        gelfMessageAssembler.setIncludeLocation(includeLocation);</span>
+<span class="fc" id="L226">    }</span>
+
     public String getTimestampPattern() {
-<span class="nc" id="L221">        return gelfMessageAssembler.getTimestampPattern();</span>
+<span class="nc" id="L229">        return gelfMessageAssembler.getTimestampPattern();</span>
     }
 
     public void setTimestampPattern(String timestampPattern) {
-<span class="nc" id="L225">        gelfMessageAssembler.setTimestampPattern(timestampPattern);</span>
-<span class="nc" id="L226">    }</span>
+<span class="nc" id="L233">        gelfMessageAssembler.setTimestampPattern(timestampPattern);</span>
+<span class="nc" id="L234">    }</span>
 
     public String getVersion() {
-<span class="nc" id="L229">        return gelfMessageAssembler.getVersion();</span>
+<span class="nc" id="L237">        return gelfMessageAssembler.getVersion();</span>
     }
 
     public void setVersion(String version) {
-<span class="nc" id="L233">        gelfMessageAssembler.setVersion(version);</span>
-<span class="nc" id="L234">    }</span>
+<span class="nc" id="L241">        gelfMessageAssembler.setVersion(version);</span>
+<span class="nc" id="L242">    }</span>
 
     public String getLineBreak() {
-<span class="nc" id="L237">        return lineBreak;</span>
+<span class="nc" id="L245">        return lineBreak;</span>
     }
 
     public void setLineBreak(String lineBreak) {
-<span class="nc" id="L241">        this.lineBreak = lineBreak;</span>
-<span class="nc" id="L242">    }</span>
+<span class="nc" id="L249">        this.lineBreak = lineBreak;</span>
+<span class="nc" id="L250">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
