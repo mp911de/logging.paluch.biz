@@ -70,7 +70,7 @@ public class JBoss7JulLogEvent extends JulLogEvent {
 
 <span class="fc bfc" id="L71" title="All 2 branches covered.">        for (String mdcName : matchingMdcNames) {</span>
 <span class="fc" id="L72">            String mdcValue = getMdcValue(mdcName);</span>
-<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if (mdcName != null) {</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if (mdcValue != null) {</span>
 <span class="fc" id="L74">                result.setValue(mdcName, mdcValue);</span>
             }
 <span class="fc" id="L76">        }</span>

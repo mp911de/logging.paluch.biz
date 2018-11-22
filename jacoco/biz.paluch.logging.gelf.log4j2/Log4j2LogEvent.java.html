@@ -152,7 +152,7 @@ class Log4j2LogEvent implements LogEvent {
 
 <span class="fc bfc" id="L153" title="All 2 branches covered.">        for (String mdcName : matchingMdcNames) {</span>
 <span class="fc" id="L154">            String mdcValue = getMdcValue(mdcName);</span>
-<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (mdcName != null) {</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (mdcValue != null) {</span>
 <span class="fc" id="L156">                result.setValue(mdcName, mdcValue);</span>
             }
 <span class="fc" id="L158">        }</span>
@@ -172,23 +172,22 @@ class Log4j2LogEvent implements LogEvent {
     }
 
     private String getValue(MdcMessageField field) {
-
-<span class="fc" id="L176">        return getMdcValue(field.getMdcName());</span>
+<span class="fc" id="L175">        return getMdcValue(field.getMdcName());</span>
     }
 
     @Override
     public String getMdcValue(String mdcName) {
-<span class="fc" id="L181">        Map&lt;String, String&gt; mdcPropertyMap = logEvent.getContextMap();</span>
-<span class="pc bpc" id="L182" title="1 of 4 branches missed.">        if (null != mdcPropertyMap &amp;&amp; mdcPropertyMap.containsKey(mdcName)) {</span>
-<span class="fc" id="L183">            return mdcPropertyMap.get(mdcName);</span>
+<span class="fc" id="L180">        Map&lt;String, String&gt; mdcPropertyMap = logEvent.getContextMap();</span>
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">        if (null != mdcPropertyMap &amp;&amp; mdcPropertyMap.containsKey(mdcName)) {</span>
+<span class="fc" id="L182">            return mdcPropertyMap.get(mdcName);</span>
         }
 
-<span class="fc" id="L186">        return null;</span>
+<span class="fc" id="L185">        return null;</span>
     }
 
     @Override
     public Set&lt;String&gt; getMdcNames() {
-<span class="fc" id="L191">        return getAllMdcNames();</span>
+<span class="fc" id="L190">        return getAllMdcNames();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

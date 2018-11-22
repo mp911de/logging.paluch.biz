@@ -124,7 +124,7 @@ public class GelfLogAppender extends AppenderSkeleton implements ErrorReporter {
 
     @Override
     public void close() {
-<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (null != gelfSender) {</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (null != gelfSender) {</span>
 <span class="fc" id="L128">            Closer.close(gelfSender);</span>
 <span class="fc" id="L129">            gelfSender = null;</span>
         }
