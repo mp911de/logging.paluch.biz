@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RedisSenderPoolProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">RedisSenderPoolProvider.java</span></div><h1>RedisSenderPoolProvider.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import redis.clients.jedis.*;
+import redis.clients.jedis.util.Pool;
+
+/**
+ * Singleton for administration of commonly used jedis pools
+ *
+ * @author https://github.com/Batigoal/logstash-gelf.git
+ * @author Mark Paluch
+ */
+<span class="nc" id="L20">enum RedisSenderPoolProvider {</span>
+
+<span class="nc" id="L22">    STANDALONE {</span>
+<span class="nc" id="L23">        private Map&lt;String, JedisPool&gt; standalonePools = new HashMap&lt;String, JedisPool&gt;();</span>
+
+        @Override
+        public String getScheme() {
+<span class="nc" id="L27">            return RedisSenderConstants.REDIS_SCHEME;</span>
+        }
+
+        /**
+         * Create a Jedis Pool for standalone Redis Operations.
+         *
+         * @param hostURI
+         * @param configuredPort
+         * @param timeoutMs
+         * @return Pool&lt;Jedis&gt;
+         */
+        @Override
+        public synchronized Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort, int timeoutMs) {
+<span class="nc" id="L40">            String lowerCasedConnectionString = hostURI.toString().toLowerCase();</span>
+<span class="nc" id="L41">            String cleanConnectionString = lowerCasedConnectionString.substring(0, lowerCasedConnectionString.length()</span>
+<span class="nc" id="L42">                    - hostURI.getFragment().length());</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (!standalonePools.containsKey(cleanConnectionString)) {</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                String password = (hostURI.getUserInfo() != null) ? hostURI.getUserInfo().split(&quot;:&quot;, 2)[1] : null;</span>
+<span class="nc" id="L47">                int database = Protocol.DEFAULT_DATABASE;</span>
+<span class="nc bnc" id="L48" title="All 4 branches missed.">                if (hostURI.getPath() != null &amp;&amp; hostURI.getPath().length() &gt; 1) {</span>
+<span class="nc" id="L49">                    database = Integer.parseInt(hostURI.getPath().split(&quot;/&quot;, 2)[1]);</span>
+                }
+<span class="nc bnc" id="L51" title="All 2 branches missed.">                int port = hostURI.getPort() &gt; 0 ? hostURI.getPort() : configuredPort;</span>
+<span class="nc" id="L52">                JedisPool newPool = new JedisPool(new JedisPoolConfig(), hostURI.getHost(), port, timeoutMs, password, database);</span>
+
+<span class="nc" id="L54">                standalonePools.put(cleanConnectionString, newPool);</span>
+            }
+<span class="nc" id="L56">            return standalonePools.get(cleanConnectionString);</span>
+        }
+    },
+<span class="nc" id="L59">    SENTINEL {</span>
+        public static final String MASTER_ID = &quot;masterId&quot;;
+
+<span class="nc" id="L62">        private Map&lt;String, JedisSentinelPool&gt; sentinelPools = new HashMap&lt;String, JedisSentinelPool&gt;();</span>
+
+        @Override
+        public String getScheme() {
+<span class="nc" id="L66">            return RedisSenderConstants.REDIS_SENTINEL_SCHEME;</span>
+        }
+
+        /**
+         * Create a Jedis Pool for sentinel Redis Operations.
+         *
+         * @param hostURI
+         * @param configuredPort
+         * @param timeoutMs
+         * @return Pool&lt;Jedis&gt;
+         */
+        @Override
+        public Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort, int timeoutMs) {
+<span class="nc" id="L79">            String lowerCasedConnectionString = hostURI.toString().toLowerCase();</span>
+<span class="nc" id="L80">            String cleanConnectionString = lowerCasedConnectionString.substring(0, lowerCasedConnectionString.length()</span>
+<span class="nc" id="L81">                    - hostURI.getFragment().length());</span>
+
+<span class="nc" id="L83">            Set&lt;String&gt; sentinels = getSentinels(hostURI);</span>
+<span class="nc" id="L84">            String masterName = getMasterName(hostURI);</span>
+
+            // No logging for Jedis Sentinel at all.
+<span class="nc" id="L87">            Logger.getLogger(JedisSentinelPool.class.getName()).setLevel(Level.OFF);</span>
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (!sentinelPools.containsKey(cleanConnectionString)) {</span>
+
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                String password = (hostURI.getUserInfo() != null) ? hostURI.getUserInfo().split(&quot;:&quot;, 2)[1] : null;</span>
+<span class="nc" id="L92">                int database = Protocol.DEFAULT_DATABASE;</span>
+<span class="nc bnc" id="L93" title="All 4 branches missed.">                if (hostURI.getPath() != null &amp;&amp; hostURI.getPath().length() &gt; 1) {</span>
+<span class="nc" id="L94">                    database = Integer.parseInt(hostURI.getPath().split(&quot;/&quot;, 2)[1]);</span>
+                }
+<span class="nc" id="L96">                JedisSentinelPool newPool = new JedisSentinelPool(masterName, sentinels, new JedisPoolConfig(), timeoutMs,</span>
+                        password, database);
+
+<span class="nc" id="L99">                sentinelPools.put(cleanConnectionString, newPool);</span>
+            }
+<span class="nc" id="L101">            return sentinelPools.get(cleanConnectionString);</span>
+        }
+
+        protected String getMasterName(URI hostURI) {
+<span class="nc" id="L105">            String masterName = &quot;master&quot;;</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (hostURI.getQuery() != null) {</span>
+<span class="nc" id="L108">                String[] keyValues = hostURI.getQuery().split(&quot;\\&amp;&quot;);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                for (String keyValue : keyValues) {</span>
+<span class="nc" id="L110">                    String parts[] = keyValue.split(&quot;\\=&quot;);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                    if (parts.length != 2) {</span>
+<span class="nc" id="L112">                        continue;</span>
+                    }
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    if (parts[0].equals(MASTER_ID)) {</span>
+<span class="nc" id="L116">                        masterName = parts[1].trim();</span>
+                    }
+                }
+            }
+<span class="nc" id="L120">            return masterName;</span>
+        }
+
+        protected Set&lt;String&gt; getSentinels(URI hostURI) {
+<span class="nc" id="L124">            Set&lt;String&gt; sentinels = new HashSet&lt;String&gt;();</span>
+
+<span class="nc" id="L126">            String[] sentinelHostNames = hostURI.getHost().split(&quot;\\,&quot;);</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            for (String sentinelHostName : sentinelHostNames) {</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                if (sentinelHostName.contains(&quot;:&quot;)) {</span>
+<span class="nc" id="L129">                    sentinels.add(sentinelHostName);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                } else if (hostURI.getPort() &gt; 0) {</span>
+<span class="nc" id="L131">                    sentinels.add(sentinelHostName + &quot;:&quot; + hostURI.getPort());</span>
+                }
+            }
+<span class="nc" id="L134">            return sentinels;</span>
+        }
+    };
+
+    public abstract String getScheme();
+
+    public abstract Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort, int timeoutMs);
+
+    public static Pool&lt;Jedis&gt; getJedisPool(URI hostURI, int configuredPort) {
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        for (RedisSenderPoolProvider provider : values()) {</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (provider.getScheme().equals(hostURI.getScheme())) {</span>
+<span class="nc" id="L146">                return provider.getJedisPool(hostURI, configuredPort, Protocol.DEFAULT_TIMEOUT);</span>
+            }
+
+        }
+
+<span class="nc" id="L151">        throw new IllegalArgumentException(&quot;Scheme &quot; + hostURI.getScheme() + &quot; not supported&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

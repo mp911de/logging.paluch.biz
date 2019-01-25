@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValueDiscovery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern</a> &gt; <span class="el_source">ValueDiscovery.java</span></div><h1>ValueDiscovery.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern;
+
+/**
+ * Data type discovery for {@link String} value types. Discovers an indicator whether a type is a {@link Result#LONG}, a
+ * {@link Result#DOUBLE} or {@link Result#STRING} type.
+ *
+ * @author &lt;a href=&quot;mailto:mpaluch@paluch.biz&quot;&gt;Mark Paluch&lt;/a&gt;
+ */
+<span class="nc" id="L9">class ValueDiscovery {</span>
+
+    static Result discover(String value) {
+
+<span class="fc" id="L13">        long len = value.length();</span>
+
+<span class="fc bfc" id="L15" title="All 4 branches covered.">        if (len == 0 || len &gt; 32) {</span>
+<span class="fc" id="L16">            return Result.STRING;</span>
+        }
+
+<span class="fc" id="L19">        int points = -1;</span>
+
+<span class="fc" id="L21">        char firstChar = value.charAt(0);</span>
+<span class="fc bfc" id="L22" title="All 4 branches covered.">        if (firstChar &lt; '0' || firstChar &gt; '9') { // Possible leading &quot;+&quot; or &quot;-&quot;</span>
+
+<span class="pc bpc" id="L24" title="3 of 4 branches missed.">            if (firstChar == 'N' &amp;&amp; value.contains(&quot;NaN&quot;)) {</span>
+<span class="nc" id="L25">                return Result.DOUBLE;</span>
+            }
+
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">            if (firstChar == 'I' &amp;&amp; value.contains(&quot;Infinity&quot;)) {</span>
+<span class="nc" id="L29">                return Result.DOUBLE;</span>
+            }
+
+<span class="fc bfc" id="L32" title="All 4 branches covered.">            if (firstChar != '-' &amp;&amp; firstChar != '+') {</span>
+<span class="fc" id="L33">                return Result.STRING;</span>
+            }
+        }
+
+<span class="fc" id="L37">        Result discoveryResult = Result.LONG;</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (int i = 1; i &lt; len; i++) {</span>
+
+<span class="fc" id="L41">            char c = value.charAt(i);</span>
+
+<span class="fc bfc" id="L43" title="All 4 branches covered.">            if (c &gt;= '0' &amp;&amp; c &lt;= '9') {</span>
+<span class="fc" id="L44">                continue;</span>
+            }
+
+<span class="fc bfc" id="L47" title="All 4 branches covered.">            switch (c) {</span>
+
+                case '.':
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                    if (points != -1) {</span>
+<span class="fc" id="L52">                        return Result.STRING;</span>
+                    }
+
+<span class="fc" id="L55">                    points = i;</span>
+<span class="fc" id="L56">                    discoveryResult = Result.DOUBLE;</span>
+<span class="fc" id="L57">                    break;</span>
+
+                case '-':
+                case '+':
+<span class="fc" id="L61">                    discoveryResult = Result.DOUBLE;</span>
+<span class="fc" id="L62">                    break;</span>
+                case 'a':
+                case 'b':
+                case 'c':
+                case 'd':
+                case 'e':
+                case 'f':
+                case 'A':
+                case 'B':
+                case 'C':
+                case 'D':
+                case 'E':
+                case 'F':
+                case 'x':
+                case 'X':
+                case 'P':
+                case 'p':
+<span class="fc" id="L79">                    discoveryResult = Result.DOUBLE;</span>
+<span class="fc" id="L80">                    break;</span>
+                default:
+<span class="fc" id="L82">                    return Result.STRING;</span>
+
+            }
+        }
+
+<span class="fc" id="L87">        return discoveryResult;</span>
+    }
+
+<span class="pc" id="L90">    enum Result {</span>
+
+<span class="fc" id="L92">        STRING, LONG, DOUBLE;</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

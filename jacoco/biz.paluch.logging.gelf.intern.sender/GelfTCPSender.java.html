@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GelfTCPSender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">GelfTCPSender.java</span></div><h1>GelfTCPSender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.TimeUnit;
+
+import biz.paluch.logging.gelf.intern.Closer;
+import biz.paluch.logging.gelf.intern.ErrorReporter;
+import biz.paluch.logging.gelf.intern.GelfMessage;
+import biz.paluch.logging.gelf.intern.GelfSender;
+
+/**
+ * @author https://github.com/t0xa/gelfj
+ * @author Mark Paluch
+ */
+public class GelfTCPSender extends AbstractNioSender&lt;SocketChannel&gt; implements GelfSender {
+
+    public static final String CONNECTION_TIMEOUT = &quot;connectionTimeout&quot;;
+    public static final String READ_TIMEOUT = &quot;readTimeout&quot;;
+    public static final String RETRIES = &quot;deliveryAttempts&quot;;
+    public static final String KEEPALIVE = &quot;keepAlive&quot;;
+
+    private final int readTimeoutMs;
+    private final int connectTimeoutMs;
+    private final boolean keepAlive;
+    private final int deliveryAttempts;
+
+<span class="fc" id="L32">    private final Object ioLock = new Object();</span>
+
+<span class="fc" id="L34">    private final ThreadLocal&lt;ByteBuffer&gt; writeBuffers = new ThreadLocal&lt;ByteBuffer&gt;() {</span>
+        @Override
+        protected ByteBuffer initialValue() {
+<span class="fc" id="L37">            return ByteBuffer.allocateDirect(INITIAL_BUFFER_SIZE);</span>
+        }
+    };
+
+    /**
+     * @param host the host, must not be {@literal null}.
+     * @param port the port.
+     * @param connectTimeoutMs connection timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param readTimeoutMs read timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param errorReporter the error reporter, must not be {@literal null}.
+     * @throws IOException in case of I/O errors
+     */
+    public GelfTCPSender(String host, int port, int connectTimeoutMs, int readTimeoutMs, ErrorReporter errorReporter)
+            throws IOException {
+<span class="fc" id="L51">        this(host, port, connectTimeoutMs, readTimeoutMs, 1, false, errorReporter);</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * @param host the host, must not be {@literal null}.
+     * @param port the port.
+     * @param connectTimeoutMs connection timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param readTimeoutMs read timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param deliveryAttempts number of delivery attempts.
+     * @param keepAlive {@literal true} to enable TCP keep-alive.
+     * @param errorReporter the error reporter, must not be {@literal null}.
+     * @throws IOException in case of I/O errors
+     */
+    public GelfTCPSender(String host, int port, int connectTimeoutMs, int readTimeoutMs, int deliveryAttempts,
+            boolean keepAlive, ErrorReporter errorReporter) throws IOException {
+
+<span class="fc" id="L67">        super(errorReporter, host, port);</span>
+
+<span class="fc" id="L69">        this.connectTimeoutMs = connectTimeoutMs;</span>
+<span class="fc" id="L70">        this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L71">        this.keepAlive = keepAlive;</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        this.deliveryAttempts = deliveryAttempts &lt; 1 ? Integer.MAX_VALUE : deliveryAttempts;</span>
+
+<span class="fc" id="L74">        this.setChannel(createSocketChannel(readTimeoutMs, keepAlive));</span>
+<span class="fc" id="L75">    }</span>
+
+    protected SocketChannel createSocketChannel(int readTimeoutMs, boolean keepAlive) throws IOException {
+<span class="fc" id="L78">        SocketChannel socketChannel = SocketChannel.open();</span>
+<span class="fc" id="L79">        socketChannel.configureBlocking(false);</span>
+<span class="fc" id="L80">        socketChannel.socket().setKeepAlive(keepAlive);</span>
+<span class="fc" id="L81">        socketChannel.socket().setSoTimeout(readTimeoutMs);</span>
+<span class="fc" id="L82">        return socketChannel;</span>
+    }
+
+    /**
+     * @param message the message
+     * @return {@literal true} if message was sent.
+     */
+    public boolean sendMessage(GelfMessage message) {
+
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (isShutdown()) {</span>
+<span class="nc" id="L92">            return false;</span>
+        }
+
+<span class="fc" id="L95">        IOException exception = null;</span>
+
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        for (int i = 0; i &lt; deliveryAttempts; i++) {</span>
+            try {
+
+                // (re)-connect if necessary
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (!isConnected()) {</span>
+<span class="fc" id="L102">                    synchronized (ioLock) {</span>
+<span class="fc" id="L103">                        connect();</span>
+<span class="fc" id="L104">                    }</span>
+                }
+                ByteBuffer buffer;
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                if (INITIAL_BUFFER_SIZE == 0) {</span>
+<span class="nc" id="L108">                    buffer = message.toTCPBuffer();</span>
+                } else {
+<span class="fc" id="L110">                    buffer = GelfBuffers.toTCPBuffer(message, writeBuffers);</span>
+                }
+
+<span class="fc" id="L113">                synchronized (ioLock) {</span>
+<span class="fc" id="L114">                    write(buffer);</span>
+<span class="pc" id="L115">                }</span>
+
+<span class="fc" id="L117">                return true;</span>
+<span class="fc" id="L118">            } catch (IOException e) {</span>
+<span class="fc" id="L119">                Closer.close(channel());</span>
+<span class="fc" id="L120">                exception = e;</span>
+            }
+        }
+
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (exception != null) {</span>
+<span class="fc" id="L125">            reportError(exception.getMessage(),</span>
+<span class="fc" id="L126">                    new IOException(&quot;Cannot send data to &quot; + getHost() + &quot;:&quot; + getPort(), exception));</span>
+        }
+
+<span class="fc" id="L129">        return false;</span>
+    }
+
+    protected void write(ByteBuffer buffer) throws IOException {
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        while (buffer.hasRemaining()) {</span>
+<span class="fc" id="L135">            int written = channel().write(buffer);</span>
+
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">            if (written &lt; 0 || !isConnected()) {</span>
+                // indicator the socket was closed
+<span class="nc" id="L139">                Closer.close(channel());</span>
+<span class="nc" id="L140">                throw new SocketException(&quot;Cannot write buffer to channel&quot;);</span>
+            }
+<span class="fc" id="L142">        }</span>
+<span class="fc" id="L143">    }</span>
+
+    protected boolean connect() throws IOException {
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (isConnected()) {</span>
+<span class="nc" id="L148">            return false;</span>
+        }
+
+<span class="fc" id="L151">        Closer.close(channel());</span>
+<span class="fc" id="L152">        setChannel(createSocketChannel(readTimeoutMs, keepAlive));</span>
+
+<span class="fc" id="L154">        InetSocketAddress inetSocketAddress = new InetSocketAddress(getHost(), getPort());</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (channel().connect(inetSocketAddress)) {</span>
+<span class="nc" id="L156">            return true;</span>
+        }
+
+<span class="fc" id="L159">        long connectTimeoutLeft = TimeUnit.MILLISECONDS.toNanos(connectTimeoutMs);</span>
+<span class="fc" id="L160">        long waitTimeoutMs = 10;</span>
+<span class="fc" id="L161">        long waitTimeoutNs = TimeUnit.MILLISECONDS.toNanos(waitTimeoutMs);</span>
+        boolean connected;
+        try {
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            while (!(connected = channel().finishConnect())) {</span>
+<span class="fc" id="L165">                Thread.sleep(waitTimeoutMs);</span>
+<span class="fc" id="L166">                connectTimeoutLeft -= waitTimeoutNs;</span>
+
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (connectTimeoutLeft &lt;= 0) {</span>
+<span class="fc" id="L169">                    break;</span>
+                }
+            }
+
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            if (!connected) {</span>
+<span class="fc" id="L174">                throw new ConnectException(&quot;Connection timed out. Cannot connect to &quot; + inetSocketAddress + &quot; within &quot;</span>
+<span class="fc" id="L175">                        + TimeUnit.NANOSECONDS.toMillis(connectTimeoutLeft) + &quot;ms&quot;);</span>
+            }
+
+<span class="fc" id="L178">            return connected;</span>
+<span class="nc" id="L179">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L180">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L181">            throw new IOException(&quot;Connection interrupted&quot;, e);</span>
+        }
+    }
+
+    @Override
+    protected boolean isConnected(SocketChannel channel) {
+<span class="fc" id="L187">        return channel.isConnected();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

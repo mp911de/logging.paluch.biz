@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GelfMessage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern</a> &gt; <span class="el_source">GelfMessage.java</span></div><h1>GelfMessage.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern;
+
+import static biz.paluch.logging.gelf.intern.JsonWriter.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+
+import biz.paluch.logging.gelf.intern.ValueDiscovery.Result;
+
+/**
+ * Represents a Gelf message. A Gelf message contains all required Fields according to the Gelf Spec.
+ *
+ * A {@link GelfMessage} can be converted to {@link #toJson()}, to {@link #toTCPBuffer()} and to {@link #toUDPBuffers()}. It
+ * also provides methods accepting {@link ByteBuffer} to reduce GC pressure.
+ *
+ * @author https://github.com/t0xa/gelfj
+ * @author Mark Paluch
+ * @see &lt;a href=&quot;http://docs.graylog.org/en/2.0/pages/gelf.html&quot;&gt;http://docs.graylog.org/en/2.0/pages/gelf.html&lt;/a&gt;
+ */
+public class GelfMessage {
+
+    public static final String FIELD_HOST = &quot;host&quot;;
+    public static final String FIELD_SHORT_MESSAGE = &quot;short_message&quot;;
+    public static final String FIELD_FULL_MESSAGE = &quot;full_message&quot;;
+    public static final String FIELD_TIMESTAMP = &quot;timestamp&quot;;
+    public static final String FIELD_LEVEL = &quot;level&quot;;
+    public static final String FIELD_FACILITY = &quot;facility&quot;;
+    public static final String ID_NAME = &quot;id&quot;;
+
+    /**
+     * Discover the field type by trying to parse it.
+     */
+    public static final String FIELD_TYPE_DISCOVER = &quot;discover&quot;;
+
+    /**
+     * String field type.
+     */
+    public static final String FIELD_TYPE_STRING = &quot;String&quot;;
+
+    /**
+     * long field type. Zero if value cannot be converted.
+     */
+    public static final String FIELD_TYPE_LONG = &quot;long&quot;;
+
+    /**
+     * Long field type. Null if value cannot be converted.
+     */
+    public static final String FIELD_TYPE_LONG2 = &quot;Long&quot;;
+
+    /**
+     * double field type. Zero if value cannot be converted.
+     */
+    public static final String FIELD_TYPE_DOUBLE = &quot;double&quot;;
+
+    /**
+     * Double field type. Null if value cannot be converted.
+     */
+    public static final String FIELD_TYPE_DOUBLE2 = &quot;Double&quot;;
+
+    /*
+     * Default field type: Discover
+     */
+    public static final String FIELD_TYPE_DEFAULT = FIELD_TYPE_DISCOVER;
+
+    public static final String GELF_VERSION_1_0 = &quot;1.0&quot;;
+    public static final String GELF_VERSION_1_1 = &quot;1.1&quot;;
+
+    public static final String GELF_VERSION = GELF_VERSION_1_0;
+
+    public static final String DEFAULT_FACILITY = &quot;logstash-gelf&quot;;
+    public static final int DEFAULT_MESSAGE_SIZE = 8192;
+    public static final int DEFAUL_LEVEL = 7;
+
+<span class="fc" id="L80">    private static final byte[] GELF_CHUNKED_ID = new byte[] { 0x1e, 0x0f };</span>
+<span class="fc" id="L81">    private static final BigDecimal TIME_DIVISOR = new BigDecimal(1000);</span>
+<span class="fc" id="L82">    private static final byte[] NONE = lastFourAsciiBytes(&quot;none&quot;);</span>
+
+<span class="fc" id="L84">    private String version = GELF_VERSION;</span>
+    private String host;
+<span class="fc" id="L86">    private byte[] hostBytes = NONE;</span>
+    private String shortMessage;
+    private String fullMessage;
+    private long javaTimestamp;
+    private String level;
+<span class="fc" id="L91">    private String facility = DEFAULT_FACILITY;</span>
+<span class="fc" id="L92">    private Map&lt;String, String&gt; additonalFields = new HashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L93">    private Map&lt;String, String&gt; additionalFieldTypes = new HashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L94">    private int maximumMessageSize = DEFAULT_MESSAGE_SIZE;</span>
+
+<span class="fc" id="L96">    public GelfMessage() {</span>
+<span class="fc" id="L97">    }</span>
+
+<span class="fc" id="L99">    public GelfMessage(String shortMessage, String fullMessage, long timestamp, String level) {</span>
+
+<span class="fc" id="L101">        this.shortMessage = shortMessage;</span>
+<span class="fc" id="L102">        this.fullMessage = fullMessage;</span>
+<span class="fc" id="L103">        this.javaTimestamp = timestamp;</span>
+<span class="fc" id="L104">        this.level = level;</span>
+<span class="fc" id="L105">    }</span>
+
+    /**
+     * Create a JSON representation for this {@link GelfMessage}. Additional fields are prefixed with underscore {@code _}.
+     *
+     * @return the JSON string.
+     */
+    public String toJson() {
+<span class="fc" id="L113">        return toJson(&quot;_&quot;);</span>
+    }
+
+    /**
+     * Create a JSON representation for this {@link GelfMessage}. Additional fields are prefixed with
+     * {@code additionalFieldPrefix}.
+     *
+     * @param additionalFieldPrefix must not be {@literal null}
+     * @return the JSON string.
+     */
+    public String toJson(String additionalFieldPrefix) {
+<span class="fc" id="L124">        return new String(toJsonByteArray(additionalFieldPrefix), Charsets.UTF8);</span>
+    }
+
+    private byte[] toJsonByteArray(String additionalFieldPrefix) {
+
+<span class="fc" id="L129">        ByteArrayOutputStream buffer = new ByteArrayOutputStream();</span>
+<span class="fc" id="L130">        toJson(OutputAccessor.from(buffer), additionalFieldPrefix);</span>
+
+<span class="fc" id="L132">        return buffer.toByteArray();</span>
+    }
+
+    /**
+     * Create a JSON representation for this {@link GelfMessage} and write it to the {@link ByteBuffer}. Additional fields are
+     * prefixed with {@code additionalFieldPrefix}.
+     *
+     * @param byteBuffer must not be {@literal null}
+     * @param additionalFieldPrefix must not be {@literal null}
+     */
+    public void toJson(ByteBuffer byteBuffer, String additionalFieldPrefix) {
+<span class="fc" id="L143">        toJson(OutputAccessor.from(byteBuffer), additionalFieldPrefix);</span>
+<span class="fc" id="L144">    }</span>
+
+    protected void toJson(OutputAccessor out, String additionalFieldPrefix) {
+
+<span class="fc" id="L148">        JsonWriter.writeObjectStart(out);</span>
+
+<span class="fc" id="L150">        boolean hasFields = writeIfNotEmpty(out, false, FIELD_HOST, getHost());</span>
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (!isEmpty(shortMessage)) {</span>
+<span class="fc" id="L153">            hasFields = writeIfNotEmpty(out, hasFields, FIELD_SHORT_MESSAGE, getShortMessage());</span>
+        }
+
+<span class="fc" id="L156">        hasFields = writeIfNotEmpty(out, hasFields, FIELD_FULL_MESSAGE, getFullMessage());</span>
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (getJavaTimestamp() != 0) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (GELF_VERSION_1_1.equals(version)) {</span>
+<span class="fc" id="L160">                hasFields = writeIfNotEmpty(out, hasFields, FIELD_TIMESTAMP, getTimestampAsBigDecimal().doubleValue());</span>
+            } else {
+<span class="fc" id="L162">                hasFields = writeIfNotEmpty(out, hasFields, FIELD_TIMESTAMP, getTimestampAsBigDecimal().toString());</span>
+            }
+        }
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (!isEmpty(getLevel())) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            if (GELF_VERSION_1_1.equals(version)) {</span>
+                int level;
+                try {
+<span class="fc" id="L170">                    level = Integer.parseInt(getLevel());</span>
+<span class="nc" id="L171">                } catch (NumberFormatException ex) {</span>
+                    // fallback on the default value
+<span class="nc" id="L173">                    level = DEFAUL_LEVEL;</span>
+<span class="fc" id="L174">                }</span>
+<span class="fc" id="L175">                hasFields = writeIfNotEmpty(out, hasFields, FIELD_LEVEL, level);</span>
+<span class="fc" id="L176">            } else {</span>
+<span class="fc" id="L177">                hasFields = writeIfNotEmpty(out, hasFields, FIELD_LEVEL, getLevel());</span>
+            }
+        }
+
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        if (!isEmpty(getFacility())) {</span>
+<span class="fc" id="L182">            hasFields = writeIfNotEmpty(out, hasFields, FIELD_FACILITY, getFacility());</span>
+        }
+
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; additionalField : additonalFields.entrySet()) {</span>
+<span class="pc bpc" id="L186" title="1 of 4 branches missed.">            if (!ID_NAME.equals(additionalField.getKey()) &amp;&amp; additionalField.getValue() != null) {</span>
+<span class="fc" id="L187">                String value = additionalField.getValue();</span>
+<span class="fc" id="L188">                String fieldType = additionalFieldTypes.get(additionalField.getKey());</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                if (fieldType == null) {</span>
+<span class="fc" id="L190">                    fieldType = FIELD_TYPE_DEFAULT;</span>
+                }
+<span class="fc" id="L192">                Object result = getAdditionalFieldValue(value, fieldType);</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                if (result != null) {</span>
+<span class="fc" id="L194">                    hasFields = writeIfNotEmpty(out, hasFields, additionalFieldPrefix + additionalField.getKey(), result);</span>
+                }
+            }
+<span class="fc" id="L197">        }</span>
+
+<span class="fc" id="L199">        JsonWriter.writeObjectEnd(out);</span>
+<span class="fc" id="L200">    }</span>
+
+    /**
+     * Write a Value to JSON if the value is not empty.
+     */
+    private static boolean writeIfNotEmpty(OutputAccessor out, boolean hasFields, String field, Object value) {
+
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L208">            return hasFields;</span>
+        }
+
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (value instanceof String) {</span>
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (GelfMessage.isEmpty((String) value)) {</span>
+<span class="fc" id="L214">                return hasFields;</span>
+            }
+
+<span class="fc bfc" id="L217" title="All 2 branches covered.">            if (hasFields) {</span>
+<span class="fc" id="L218">                writeKeyValueSeparator(out);</span>
+            }
+
+<span class="fc" id="L221">            writeMapEntry(out, field, value);</span>
+
+<span class="fc" id="L223">            return true;</span>
+        }
+
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (hasFields) {</span>
+<span class="fc" id="L227">            writeKeyValueSeparator(out);</span>
+        }
+
+<span class="fc" id="L230">        writeMapEntry(out, field, value);</span>
+
+<span class="fc" id="L232">        return true;</span>
+    }
+
+    /**
+     * Get the field value as requested data type.
+     *
+     * @param value the value as string
+     * @param fieldType see field types
+     * @return the field value in the appropriate data type or {@literal null}.
+     */
+    static Object getAdditionalFieldValue(String value, String fieldType) {
+
+<span class="fc" id="L244">        Object result = null;</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (fieldType.equalsIgnoreCase(FIELD_TYPE_DISCOVER)) {</span>
+
+<span class="fc" id="L247">            Result discoveredType = ValueDiscovery.discover(value);</span>
+
+<span class="fc bfc" id="L249" title="All 2 branches covered.">            if (discoveredType == Result.STRING) {</span>
+<span class="fc" id="L250">                return value;</span>
+            }
+
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            if (discoveredType == Result.LONG) {</span>
+                try {
+                    // try adding the value as a long
+<span class="fc" id="L256">                    return Long.parseLong(value);</span>
+<span class="nc" id="L257">                } catch (NumberFormatException ex) {</span>
+                    // fallback on the double value
+<span class="nc" id="L259">                    return value;</span>
+                }
+            }
+
+            try {
+<span class="fc" id="L264">                return Double.parseDouble(value);</span>
+<span class="nc" id="L265">            } catch (NumberFormatException ex) {</span>
+                // fallback on the string value
+<span class="nc" id="L267">                return value;</span>
+            }
+        }
+
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (fieldType.equalsIgnoreCase(FIELD_TYPE_STRING)) {</span>
+<span class="fc" id="L272">            result = value;</span>
+        }
+
+<span class="fc bfc" id="L275" title="All 4 branches covered.">        if (fieldType.equals(FIELD_TYPE_DOUBLE) || fieldType.equalsIgnoreCase(FIELD_TYPE_DOUBLE2)) {</span>
+            try {
+<span class="fc" id="L277">                result = Double.parseDouble(value);</span>
+<span class="fc" id="L278">            } catch (NumberFormatException ex) {</span>
+<span class="fc bfc" id="L279" title="All 2 branches covered.">                if (fieldType.equals(FIELD_TYPE_DOUBLE)) {</span>
+<span class="fc" id="L280">                    result = Double.valueOf(0);</span>
+                }
+<span class="fc" id="L282">            }</span>
+        }
+
+<span class="fc bfc" id="L285" title="All 4 branches covered.">        if (fieldType.equals(FIELD_TYPE_LONG) || fieldType.equalsIgnoreCase(FIELD_TYPE_LONG2)) {</span>
+            try {
+<span class="fc" id="L287">                result = (long) Double.parseDouble(value);</span>
+<span class="fc" id="L288">            } catch (NumberFormatException ex) {</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                if (fieldType.equals(FIELD_TYPE_LONG)) {</span>
+<span class="fc" id="L290">                    result = Long.valueOf(0);</span>
+                }
+<span class="fc" id="L292">            }</span>
+        }
+
+<span class="fc" id="L295">        return result;</span>
+    }
+
+    public ByteBuffer[] toUDPBuffers() {
+
+<span class="fc" id="L300">        byte[] messageBytes = gzipMessage(toJsonByteArray(&quot;_&quot;));</span>
+
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        if (messageBytes.length &gt; maximumMessageSize) {</span>
+            // calculate the length of the datagrams array
+<span class="fc" id="L304">            int datagrams_length = messageBytes.length / maximumMessageSize;</span>
+            // In case of a remainder, due to the integer division, add a extra datagram
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">            if (messageBytes.length % maximumMessageSize != 0) {</span>
+<span class="fc" id="L307">                datagrams_length++;</span>
+            }
+
+<span class="fc" id="L310">            ByteBuffer targetBuffer = ByteBuffer.allocate(messageBytes.length + (datagrams_length * 12));</span>
+
+<span class="fc" id="L312">            return sliceDatagrams(ByteBuffer.wrap(messageBytes), datagrams_length, targetBuffer);</span>
+        }
+
+<span class="fc" id="L315">        ByteBuffer[] datagrams = new ByteBuffer[1];</span>
+<span class="fc" id="L316">        datagrams[0] = ByteBuffer.allocate(messageBytes.length);</span>
+<span class="fc" id="L317">        datagrams[0].put(messageBytes);</span>
+<span class="fc" id="L318">        datagrams[0].flip();</span>
+<span class="fc" id="L319">        return datagrams;</span>
+    }
+
+    public ByteBuffer[] toUDPBuffers(ByteBuffer buffer, ByteBuffer tempBuffer) {
+
+<span class="fc" id="L324">        tempBuffer.put(gzipMessage(toJsonByteArray(&quot;_&quot;)));</span>
+
+        // calculate the length of the datagrams array
+
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        if (tempBuffer.position() &gt; maximumMessageSize) {</span>
+
+<span class="fc" id="L330">            int diagrams_length = tempBuffer.position() / maximumMessageSize;</span>
+            // In case of a remainder, due to the integer division, add a extra datagram
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            if (tempBuffer.position() % maximumMessageSize != 0) {</span>
+<span class="fc" id="L333">                diagrams_length++;</span>
+            }
+
+<span class="fc" id="L336">            buffer.clear();</span>
+<span class="fc" id="L337">            return sliceDatagrams((ByteBuffer) tempBuffer.flip(), diagrams_length, buffer);</span>
+        }
+
+<span class="fc" id="L340">        return new ByteBuffer[] { (ByteBuffer) tempBuffer.flip() };</span>
+    }
+
+    public ByteBuffer toTCPBuffer() {
+
+        // Do not use GZIP, as the headers will contain \0 bytes
+        // graylog2-server uses \0 as a delimiter for TCP frames
+        // see: https://github.com/Graylog2/graylog2-server/issues/127
+<span class="fc" id="L348">        byte[] messageBytes = toJsonByteArray(&quot;_&quot;);</span>
+
+<span class="fc" id="L350">        ByteBuffer buffer = ByteBuffer.allocate(messageBytes.length + 1);</span>
+<span class="fc" id="L351">        buffer.put(messageBytes);</span>
+<span class="fc" id="L352">        buffer.put((byte) '\0');</span>
+<span class="fc" id="L353">        buffer.flip();</span>
+<span class="fc" id="L354">        return buffer;</span>
+    }
+
+    public ByteBuffer toTCPBuffer(ByteBuffer buffer) {
+        // Do not use GZIP, as the headers will contain \0 bytes
+        // graylog2-server uses \0 as a delimiter for TCP frames
+        // see: https://github.com/Graylog2/graylog2-server/issues/127
+
+<span class="fc" id="L362">        toJson(buffer, &quot;_&quot;);</span>
+
+<span class="fc" id="L364">        buffer.put((byte) '\0');</span>
+<span class="fc" id="L365">        buffer.flip();</span>
+<span class="fc" id="L366">        return buffer;</span>
+    }
+
+    protected ByteBuffer[] sliceDatagrams(ByteBuffer source, int datagrams, ByteBuffer target) {
+<span class="fc" id="L370">        int messageLength = source.limit();</span>
+
+<span class="fc" id="L372">        int millis = getCurrentMillis();</span>
+
+        // Reuse length of datagrams array since this is supposed to be the correct number of datagrams
+<span class="fc" id="L375">        ByteBuffer[] slices = new ByteBuffer[datagrams];</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        for (int idx = 0; idx &lt; datagrams; idx++) {</span>
+
+<span class="fc" id="L378">            int start = target.position();</span>
+<span class="fc" id="L379">            target.put(GELF_CHUNKED_ID).putInt(millis).put(hostBytes).put((byte) idx).put((byte) datagrams);</span>
+
+<span class="fc" id="L381">            int from = idx * maximumMessageSize;</span>
+<span class="fc" id="L382">            int to = from + maximumMessageSize;</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">            if (to &gt;= messageLength) {</span>
+<span class="fc" id="L384">                to = messageLength;</span>
+            }
+
+<span class="fc" id="L387">            ByteBuffer duplicate = (ByteBuffer) source.duplicate().limit(to).position(from);</span>
+<span class="fc" id="L388">            target.put(duplicate);</span>
+<span class="fc" id="L389">            int end = target.position();</span>
+
+<span class="fc" id="L391">            slices[idx] = (ByteBuffer) target.duplicate().limit(end).position(start);</span>
+        }
+
+<span class="fc" id="L394">        return slices;</span>
+    }
+
+    public int getCurrentMillis() {
+<span class="nc" id="L398">        return (int) System.currentTimeMillis();</span>
+    }
+
+    private byte[] gzipMessage(byte[] message) {
+<span class="fc" id="L402">        ByteArrayOutputStream bos = new ByteArrayOutputStream();</span>
+
+        try {
+<span class="fc" id="L405">            GZIPOutputStream stream = new GZIPOutputStream(bos);</span>
+
+<span class="fc" id="L407">            stream.write(message);</span>
+<span class="fc" id="L408">            stream.finish();</span>
+<span class="fc" id="L409">            Closer.close(stream);</span>
+<span class="fc" id="L410">            byte[] zipped = bos.toByteArray();</span>
+<span class="fc" id="L411">            Closer.close(bos);</span>
+<span class="fc" id="L412">            return zipped;</span>
+<span class="nc" id="L413">        } catch (IOException e) {</span>
+<span class="nc" id="L414">            return null;</span>
+        }
+    }
+
+    private static byte[] lastFourAsciiBytes(String host) {
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">        final String shortHost = host.length() &gt;= 4 ? host.substring(host.length() - 4) : host;</span>
+<span class="fc" id="L420">        return Charsets.ascii(shortHost);</span>
+    }
+
+    public String getVersion() {
+<span class="fc" id="L424">        return version;</span>
+    }
+
+    public void setVersion(String version) {
+<span class="fc" id="L428">        this.version = version;</span>
+<span class="fc" id="L429">    }</span>
+
+    public String getHost() {
+<span class="fc" id="L432">        return host;</span>
+    }
+
+    public void setHost(String host) {
+<span class="fc" id="L436">        this.host = host;</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">        if (host != null) {</span>
+<span class="fc" id="L438">            this.hostBytes = lastFourAsciiBytes(host);</span>
+        }
+<span class="fc" id="L440">    }</span>
+
+    public String getShortMessage() {
+<span class="pc bpc" id="L443" title="1 of 2 branches missed.">        return !isEmpty(shortMessage) ? shortMessage : &quot;&lt;empty&gt;&quot;;</span>
+    }
+
+    public void setShortMessage(String shortMessage) {
+<span class="fc" id="L447">        this.shortMessage = shortMessage;</span>
+<span class="fc" id="L448">    }</span>
+
+    public String getFullMessage() {
+<span class="fc" id="L451">        return fullMessage;</span>
+    }
+
+    public void setFullMessage(String fullMessage) {
+<span class="fc" id="L455">        this.fullMessage = fullMessage;</span>
+<span class="fc" id="L456">    }</span>
+
+    public BigDecimal getTimestampAsBigDecimal() {
+<span class="fc" id="L459">        return new BigDecimal(javaTimestamp).divide(TIME_DIVISOR);</span>
+    }
+
+    public String getTimestamp() {
+<span class="nc" id="L463">        return getTimestampAsBigDecimal().toPlainString();</span>
+    }
+
+    public Long getJavaTimestamp() {
+<span class="fc" id="L467">        return javaTimestamp;</span>
+    }
+
+    public void setJavaTimestamp(long javaTimestamp) {
+<span class="fc" id="L471">        this.javaTimestamp = javaTimestamp;</span>
+<span class="fc" id="L472">    }</span>
+
+    public String getLevel() {
+<span class="fc" id="L475">        return level;</span>
+    }
+
+    public void setLevel(String level) {
+<span class="fc" id="L479">        this.level = level;</span>
+<span class="fc" id="L480">    }</span>
+
+    public String getFacility() {
+<span class="fc" id="L483">        return facility;</span>
+    }
+
+    public void setFacility(String facility) {
+<span class="fc" id="L487">        this.facility = facility;</span>
+<span class="fc" id="L488">    }</span>
+
+    public Map&lt;String, String&gt; getAdditionalFieldTypes() {
+<span class="nc" id="L491">        return additionalFieldTypes;</span>
+    }
+
+    public void setAdditionalFieldTypes(Map&lt;String, String&gt; additionalFieldTypes) {
+<span class="fc" id="L495">        this.additionalFieldTypes.putAll(additionalFieldTypes);</span>
+<span class="fc" id="L496">    }</span>
+
+    /**
+     * Add multiple fields (key/value pairs)
+     *
+     * @param fields map of fields
+     * @return the current GelfMessage.
+     */
+    public GelfMessage addFields(Map&lt;String, String&gt; fields) {
+
+<span class="pc bpc" id="L506" title="1 of 2 branches missed.">        if (fields == null) {</span>
+<span class="nc" id="L507">            throw new IllegalArgumentException(&quot;fields is null&quot;);</span>
+        }
+
+<span class="fc" id="L510">        getAdditonalFields().putAll(fields);</span>
+<span class="fc" id="L511">        return this;</span>
+    }
+
+    /**
+     * Add a particular field.
+     *
+     * @param key the key
+     * @param value the value
+     * @return the current GelfMessage.
+     */
+    public GelfMessage addField(String key, String value) {
+<span class="fc" id="L522">        getAdditonalFields().put(key, value);</span>
+<span class="fc" id="L523">        return this;</span>
+    }
+
+    public Map&lt;String, String&gt; getAdditonalFields() {
+<span class="fc" id="L527">        return additonalFields;</span>
+    }
+
+    public boolean isValid() {
+<span class="pc bpc" id="L531" title="2 of 6 branches missed.">        return isShortOrFullMessagesExists() &amp;&amp; !isEmpty(version) &amp;&amp; !isEmpty(host);</span>
+    }
+
+    private boolean isShortOrFullMessagesExists() {
+<span class="pc bpc" id="L535" title="1 of 4 branches missed.">        return !isEmpty(shortMessage) || !isEmpty(fullMessage);</span>
+    }
+
+    public static boolean isEmpty(String str) {
+<span class="fc bfc" id="L539" title="All 4 branches covered.">        return str == null || &quot;&quot;.equals(str.trim());</span>
+    }
+
+    public int getMaximumMessageSize() {
+<span class="fc" id="L543">        return maximumMessageSize;</span>
+    }
+
+    public void setMaximumMessageSize(int maximumMessageSize) {
+<span class="fc" id="L547">        this.maximumMessageSize = maximumMessageSize;</span>
+<span class="fc" id="L548">    }</span>
+
+    public String getField(String fieldName) {
+<span class="fc" id="L551">        return getAdditonalFields().get(fieldName);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L556" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L557">            return true;</span>
+        }
+<span class="pc bpc" id="L559" title="1 of 2 branches missed.">        if (!(o instanceof GelfMessage)) {</span>
+<span class="nc" id="L560">            return false;</span>
+        }
+
+<span class="fc" id="L563">        GelfMessage that = (GelfMessage) o;</span>
+
+<span class="pc bpc" id="L565" title="1 of 2 branches missed.">        if (javaTimestamp != that.javaTimestamp) {</span>
+<span class="nc" id="L566">            return false;</span>
+        }
+<span class="pc bpc" id="L568" title="1 of 2 branches missed.">        if (maximumMessageSize != that.maximumMessageSize) {</span>
+<span class="nc" id="L569">            return false;</span>
+        }
+<span class="pc bpc" id="L571" title="4 of 6 branches missed.">        if (additonalFields != null ? !additonalFields.equals(that.additonalFields) : that.additonalFields != null) {</span>
+<span class="nc" id="L572">            return false;</span>
+        }
+<span class="pc bpc" id="L574" title="3 of 6 branches missed.">        if (facility != null ? !facility.equals(that.facility) : that.facility != null) {</span>
+<span class="fc" id="L575">            return false;</span>
+        }
+<span class="pc bpc" id="L577" title="2 of 6 branches missed.">        if (fullMessage != null ? !fullMessage.equals(that.fullMessage) : that.fullMessage != null) {</span>
+<span class="nc" id="L578">            return false;</span>
+        }
+<span class="pc bpc" id="L580" title="2 of 6 branches missed.">        if (host != null ? !host.equals(that.host) : that.host != null) {</span>
+<span class="nc" id="L581">            return false;</span>
+        }
+<span class="pc bpc" id="L583" title="1 of 2 branches missed.">        if (!Arrays.equals(hostBytes, that.hostBytes)) {</span>
+<span class="nc" id="L584">            return false;</span>
+        }
+<span class="pc bpc" id="L586" title="2 of 6 branches missed.">        if (level != null ? !level.equals(that.level) : that.level != null) {</span>
+<span class="nc" id="L587">            return false;</span>
+        }
+<span class="pc bpc" id="L589" title="2 of 6 branches missed.">        if (shortMessage != null ? !shortMessage.equals(that.shortMessage) : that.shortMessage != null) {</span>
+<span class="nc" id="L590">            return false;</span>
+        }
+<span class="pc bpc" id="L592" title="4 of 6 branches missed.">        if (version != null ? !version.equals(that.version) : that.version != null) {</span>
+<span class="nc" id="L593">            return false;</span>
+        }
+
+<span class="fc" id="L596">        return true;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="pc bpc" id="L601" title="1 of 2 branches missed.">        int result = version != null ? version.hashCode() : 0;</span>
+<span class="fc bfc" id="L602" title="All 2 branches covered.">        result = 31 * result + (host != null ? host.hashCode() : 0);</span>
+<span class="pc bpc" id="L603" title="1 of 2 branches missed.">        result = 31 * result + (hostBytes != null ? Arrays.hashCode(hostBytes) : 0);</span>
+<span class="fc bfc" id="L604" title="All 2 branches covered.">        result = 31 * result + (shortMessage != null ? shortMessage.hashCode() : 0);</span>
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        result = 31 * result + (fullMessage != null ? fullMessage.hashCode() : 0);</span>
+<span class="fc" id="L606">        result = 31 * result + (int) (javaTimestamp ^ (javaTimestamp &gt;&gt;&gt; 32));</span>
+<span class="fc bfc" id="L607" title="All 2 branches covered.">        result = 31 * result + (level != null ? level.hashCode() : 0);</span>
+<span class="pc bpc" id="L608" title="1 of 2 branches missed.">        result = 31 * result + (facility != null ? facility.hashCode() : 0);</span>
+<span class="pc bpc" id="L609" title="1 of 2 branches missed.">        result = 31 * result + (additonalFields != null ? additonalFields.hashCode() : 0);</span>
+<span class="fc" id="L610">        result = 31 * result + maximumMessageSize;</span>
+<span class="fc" id="L611">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

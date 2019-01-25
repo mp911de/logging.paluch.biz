@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RuntimeContainerProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging</a> &gt; <span class="el_source">RuntimeContainerProperties.java</span></div><h1>RuntimeContainerProperties.java</h1><pre class="source lang-java linenums">package biz.paluch.logging;
+
+/**
+ * Collection of property names in order to control host name/host name resolution.
+ * 
+ * @author Mark Paluch
+ * @since 11.04.14 12:30
+ */
+public class RuntimeContainerProperties {
+    /**
+     * Set this system property to a simple hostname to use a fixed host name.
+     */
+    public static final String PROPERTY_LOGSTASH_GELF_HOSTNAME = &quot;logstash-gelf.hostname&quot;;
+
+    /**
+     * Set this system property to a fully qualified hostname to use a fixed host name.
+     */
+    public static final String PROPERTY_LOGSTASH_GELF_FQDN_HOSTNAME = &quot;logstash-gelf.fqdn.hostname&quot;;
+
+    /**
+     * Set this system property to &lt;code&gt;true&lt;/code&gt; to skip hosname resolution. The string &lt;code&gt;unknown&lt;/code&gt; will be used as
+     * hostname.
+     */
+    public static final String PROPERTY_LOGSTASH_GELF_SKIP_HOSTNAME_RESOLUTION = &quot;logstash-gelf.skipHostnameResolution&quot;;
+
+    /**
+     * Set this propery to {@link #RESOLUTION_ORDER_LOCALHOST_NETWORK_FALLBACK} or
+     * {@link #RESOLUTION_ORDER_NETWORK_LOCALHOST_FALLBACK} to control the hostname resolution order.
+     */
+    public static final String PROPERTY_LOGSTASH_GELF_HOSTNAME_RESOLUTION_ORDER = &quot;logstash-gelf.resolutionOrder&quot;;
+
+    /**
+     * Resolution order: First inspect the local host name, then try to get the host name from network devices.
+     */
+    public static final String RESOLUTION_ORDER_LOCALHOST_NETWORK_FALLBACK = &quot;localhost,network&quot;;
+
+    /**
+     * Resolution order: First inspect the network devices to retrieve a host name, then try to get the host name from the local
+     * host.
+     */
+    public static final String RESOLUTION_ORDER_NETWORK_LOCALHOST_FALLBACK = &quot;network,localhost&quot;;
+
+<span class="nc" id="L43">    private RuntimeContainerProperties() {</span>
+
+<span class="nc" id="L45">    }</span>
+
+    /**
+     * Lookup property from ({@link System#getenv(String)} and {@link System#getProperty(String)} as fallback.
+     * 
+     * @param key the property key
+     * @param defaultValue the default value
+     * @return the property value.
+     */
+    public static String getProperty(String key, String defaultValue) {
+<span class="fc" id="L55">        String env = System.getenv(key);</span>
+<span class="pc bpc" id="L56" title="3 of 4 branches missed.">        if (env != null &amp;&amp; !&quot;&quot;.equals(env)) {</span>
+<span class="nc" id="L57">            return env;</span>
+        }
+<span class="fc" id="L59">        return System.getProperty(key, defaultValue);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

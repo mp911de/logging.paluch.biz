@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GelfTCPSSLSender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">logstash logging connectors</a> &gt; <a href="index.source.html" class="el_package">biz.paluch.logging.gelf.intern.sender</a> &gt; <span class="el_source">GelfTCPSSLSender.java</span></div><h1>GelfTCPSSLSender.java</h1><pre class="source lang-java linenums">package biz.paluch.logging.gelf.intern.sender;
+
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLSession;
+
+import biz.paluch.logging.gelf.intern.ErrorReporter;
+
+/**
+ * TCP with SSL {@link biz.paluch.logging.gelf.intern.GelfSender}.
+ *
+ * @author &lt;a href=&quot;mailto:mpaluch@paluch.biz&quot;&gt;Mark Paluch&lt;/a&gt;
+ * @author Alexander Katanov
+ * @since 1.11
+ */
+public class GelfTCPSSLSender extends GelfTCPSender {
+
+    private final int connectTimeoutMs;
+    private final SSLContext sslContext;
+<span class="fc" id="L28">    private final ThreadLocal&lt;ByteBuffer&gt; sslNetworkBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
+<span class="fc" id="L29">    private final ThreadLocal&lt;ByteBuffer&gt; tempBuffers = new ThreadLocal&lt;ByteBuffer&gt;();</span>
+
+    private volatile SSLEngine sslEngine;
+
+    private volatile SSLSession sslSession;
+
+    /**
+     * @param host the host, must not be {@literal null}.
+     * @param port the port.
+     * @param connectTimeoutMs connection timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param readTimeoutMs read timeout, in {@link TimeUnit#MILLISECONDS}.
+     * @param deliveryAttempts number of delivery attempts.
+     * @param keepAlive {@literal true} to enable TCP keep-alive.
+     * @param errorReporter the error reporter, must not be {@literal null}.
+     * @param sslContext the SSL context, must not be {@literal null}.
+     * @throws IOException in case of I/O errors
+     */
+    public GelfTCPSSLSender(String host, int port, int connectTimeoutMs, int readTimeoutMs, int deliveryAttempts,
+            boolean keepAlive, ErrorReporter errorReporter, SSLContext sslContext) throws IOException {
+
+<span class="fc" id="L49">        super(host, port, connectTimeoutMs, readTimeoutMs, deliveryAttempts, keepAlive, errorReporter);</span>
+
+<span class="fc" id="L51">        this.connectTimeoutMs = connectTimeoutMs;</span>
+<span class="fc" id="L52">        this.sslContext = sslContext;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    protected boolean connect() throws IOException {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (super.connect()) {</span>
+<span class="nc" id="L58">            this.sslEngine = sslContext.createSSLEngine();</span>
+<span class="nc" id="L59">            this.sslEngine.setUseClientMode(true);</span>
+<span class="nc" id="L60">            this.sslSession = sslEngine.getSession();</span>
+
+            // Begin handshake
+<span class="nc" id="L63">            sslEngine.beginHandshake();</span>
+<span class="nc" id="L64">            doHandshake(channel(), sslEngine, ByteBuffer.allocate(sslSession.getPacketBufferSize()),</span>
+<span class="nc" id="L65">                    ByteBuffer.allocate(sslSession.getPacketBufferSize()));</span>
+        }
+<span class="nc" id="L67">        return false;</span>
+    }
+
+    protected boolean isConnected() throws IOException {
+
+<span class="nc" id="L72">        SocketChannel socketChannel = channel();</span>
+
+<span class="nc bnc" id="L74" title="All 6 branches missed.">        return socketChannel != null &amp;&amp; socketChannel.isOpen() &amp;&amp; isConnected(socketChannel);</span>
+    }
+
+    @Override
+    protected void write(ByteBuffer gelfBuffer) throws IOException {
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        while (gelfBuffer.hasRemaining()) {</span>
+
+<span class="nc" id="L82">            read();</span>
+
+<span class="nc" id="L84">            ByteBuffer myNetData = getNetworkBuffer();</span>
+            // Generate SSL/TLS encoded data (handshake or application data)
+<span class="nc" id="L86">            gelfBuffer.mark();</span>
+<span class="nc" id="L87">            SSLEngineResult res = sslEngine.wrap(gelfBuffer, myNetData);</span>
+
+            // Process status of call
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (res.getStatus() == SSLEngineResult.Status.BUFFER_OVERFLOW) {</span>
+<span class="nc" id="L91">                this.sslNetworkBuffers.set(enlargeBuffer(gelfBuffer, myNetData));</span>
+<span class="nc" id="L92">                gelfBuffer.reset();</span>
+            }
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">            if (res.getStatus() == SSLEngineResult.Status.OK) {</span>
+<span class="nc" id="L96">                myNetData.flip();</span>
+
+                // Send SSL/TLS encoded data to peer
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                while (myNetData.hasRemaining()) {</span>
+<span class="nc" id="L100">                    int written = channel().write(myNetData);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    if (written == -1) {</span>
+<span class="nc" id="L102">                        throw new SocketException(&quot;Channel closed&quot;);</span>
+                    }
+<span class="nc" id="L104">                }</span>
+            }
+<span class="nc" id="L106">        }</span>
+<span class="nc" id="L107">    }</span>
+
+    private void read() throws IOException {
+
+<span class="nc" id="L111">        ByteBuffer myNetData = getNetworkBuffer();</span>
+<span class="nc" id="L112">        ByteBuffer tempBuffer = getTempBuffer();</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (channel().read(myNetData) &lt; 0) {</span>
+<span class="nc" id="L115">            throw new SocketException(&quot;Channel closed&quot;);</span>
+        }
+
+        // Process incoming handshaking data
+<span class="nc" id="L119">        myNetData.flip();</span>
+<span class="nc" id="L120">        sslEngine.unwrap(myNetData, tempBuffer);</span>
+<span class="nc" id="L121">    }</span>
+
+    private ByteBuffer getNetworkBuffer() {
+
+<span class="nc" id="L125">        ByteBuffer networkBuffer = this.sslNetworkBuffers.get();</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (networkBuffer == null) {</span>
+<span class="nc" id="L127">            this.sslNetworkBuffers.set(networkBuffer = ByteBuffer.allocateDirect(sslSession.getPacketBufferSize()));</span>
+        }
+<span class="nc" id="L129">        networkBuffer.clear();</span>
+<span class="nc" id="L130">        return networkBuffer;</span>
+    }
+
+    private ByteBuffer getTempBuffer() {
+
+<span class="nc" id="L135">        ByteBuffer tempBuffer = this.tempBuffers.get();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (tempBuffer == null) {</span>
+<span class="nc" id="L137">            this.tempBuffers.set(tempBuffer = ByteBuffer.allocateDirect(sslSession.getApplicationBufferSize()));</span>
+        }
+<span class="nc" id="L139">        tempBuffer.clear();</span>
+<span class="nc" id="L140">        return tempBuffer;</span>
+    }
+
+    private ByteBuffer enlargeBuffer(ByteBuffer src, ByteBuffer dst) {
+
+        // Could attempt to drain the dst buffer of any already obtained
+        // data, but we'll just increase it to the size needed.
+<span class="nc" id="L147">        ByteBuffer buffer = ByteBuffer.allocate(dst.capacity() + src.remaining());</span>
+<span class="nc" id="L148">        dst.flip();</span>
+<span class="nc" id="L149">        buffer.put(dst);</span>
+<span class="nc" id="L150">        return buffer;</span>
+    }
+
+    private void doHandshake(SocketChannel socketChannel, SSLEngine sslEngine, ByteBuffer myNetData, ByteBuffer peerNetData)
+            throws IOException {
+
+        // Create byte buffers to use for holding application data
+<span class="nc" id="L157">        int appBufferSize = sslEngine.getSession().getApplicationBufferSize();</span>
+<span class="nc" id="L158">        ByteBuffer myAppData = ByteBuffer.allocate(appBufferSize);</span>
+<span class="nc" id="L159">        ByteBuffer peerAppData = ByteBuffer.allocate(appBufferSize);</span>
+<span class="nc" id="L160">        long handshakeBegin = System.currentTimeMillis();</span>
+
+<span class="nc" id="L162">        SSLEngineResult.HandshakeStatus hs = sslEngine.getHandshakeStatus();</span>
+
+        // Process handshaking message
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        while (hs != SSLEngineResult.HandshakeStatus.FINISHED &amp;&amp; hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {</span>
+
+<span class="nc" id="L167">            long handshakeDuration = System.currentTimeMillis() - handshakeBegin;</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (handshakeDuration &gt; connectTimeoutMs) {</span>
+<span class="nc" id="L170">                throw new SocketTimeoutException(&quot;SSL handshake timeout exceeded&quot;);</span>
+            }
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (!isConnected(socketChannel)) {</span>
+<span class="nc" id="L174">                throw new SocketException(&quot;Channel closed&quot;);</span>
+            }
+
+<span class="nc bnc" id="L177" title="All 5 branches missed.">            switch (hs) {</span>
+
+                case NEED_UNWRAP:
+                    // Receive handshaking data from peer
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                    if (socketChannel.read(peerNetData) &lt; 0) {</span>
+<span class="nc" id="L182">                        throw new SocketException(&quot;Channel closed&quot;);</span>
+                    }
+
+                    // Process incoming handshaking data
+<span class="nc" id="L186">                    peerNetData.flip();</span>
+<span class="nc" id="L187">                    SSLEngineResult res = sslEngine.unwrap(peerNetData, peerAppData);</span>
+<span class="nc" id="L188">                    peerNetData.compact();</span>
+<span class="nc" id="L189">                    hs = res.getHandshakeStatus();</span>
+
+                    // Check status
+<span class="nc bnc" id="L192" title="All 3 branches missed.">                    switch (res.getStatus()) {</span>
+                        case OK:
+                            // Handle OK status
+<span class="nc" id="L195">                            break;</span>
+                        case BUFFER_OVERFLOW:
+<span class="nc" id="L197">                            peerAppData = enlargeBuffer(peerNetData, peerAppData);</span>
+<span class="nc" id="L198">                            break;</span>
+
+                        case BUFFER_UNDERFLOW:
+
+                            break;
+                    }
+<span class="nc" id="L204">                    break;</span>
+
+                case NEED_WRAP:
+                    // Empty the local network packet buffer.
+<span class="nc" id="L208">                    myNetData.clear();</span>
+
+                    // Generate handshaking data
+<span class="nc" id="L211">                    res = sslEngine.wrap(myAppData, myNetData);</span>
+<span class="nc" id="L212">                    hs = res.getHandshakeStatus();</span>
+
+                    // Check status
+<span class="nc bnc" id="L215" title="All 5 branches missed.">                    switch (res.getStatus()) {</span>
+                        case OK:
+<span class="nc" id="L217">                            myNetData.flip();</span>
+
+                            // Send the handshaking data to peer
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                            while (myNetData.hasRemaining()) {</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                                if (socketChannel.write(myNetData) &lt; 0) {</span>
+                                    // Handle closed channel
+                                }
+                            }
+                            break;
+                        case BUFFER_OVERFLOW:
+<span class="nc" id="L227">                            myNetData = enlargeBuffer(myAppData, myNetData);</span>
+<span class="nc" id="L228">                            break;</span>
+
+                        case BUFFER_UNDERFLOW:
+<span class="nc" id="L231">                            break;</span>
+                        case CLOSED:
+
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                            if (sslEngine.isOutboundDone()) {</span>
+<span class="nc" id="L235">                                return;</span>
+                            } else {
+<span class="nc" id="L237">                                sslEngine.closeOutbound();</span>
+<span class="nc" id="L238">                                hs = sslEngine.getHandshakeStatus();</span>
+<span class="nc" id="L239">                                break;</span>
+                            }
+
+                        default:
+<span class="nc" id="L243">                            throw new IOException(&quot;Cannot wrap data: &quot; + res.getStatus());</span>
+
+                    }
+                    break;
+
+                case NEED_TASK:
+                    Runnable task;
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                    while ((task = sslEngine.getDelegatedTask()) != null) {</span>
+<span class="nc" id="L251">                        task.run();</span>
+                    }
+<span class="nc" id="L253">                    hs = sslEngine.getHandshakeStatus();</span>
+<span class="nc" id="L254">                    break;</span>
+
+                case FINISHED:
+<span class="nc" id="L257">                    return;</span>
+            }
+<span class="nc" id="L259">        }</span>
+<span class="nc" id="L260">    }</span>
+
+    @Override
+    public void close() {
+
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        if (channel() != null) {</span>
+
+            try {
+<span class="fc" id="L268">                closeSocketChannel();</span>
+<span class="nc" id="L269">            } catch (IOException e) {</span>
+<span class="nc" id="L270">                reportError(e.getMessage(), e);</span>
+<span class="fc" id="L271">            }</span>
+        }
+
+<span class="fc" id="L274">        super.close();</span>
+<span class="fc" id="L275">    }</span>
+
+    @Override
+    protected boolean isConnected(SocketChannel channel) {
+<span class="nc bnc" id="L279" title="All 4 branches missed.">        return super.isConnected(channel) &amp;&amp; channel.isOpen();</span>
+    }
+
+    private void closeSocketChannel() throws IOException {
+
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        if (sslEngine != null) {</span>
+
+<span class="nc" id="L286">            sslEngine.closeOutbound();</span>
+
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            if (sslSession != null) {</span>
+<span class="nc" id="L289">                doHandshake(channel(), sslEngine, ByteBuffer.allocate(sslSession.getPacketBufferSize()),</span>
+<span class="nc" id="L290">                        ByteBuffer.allocate(sslSession.getPacketBufferSize()));</span>
+            }
+        }
+<span class="fc" id="L293">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
